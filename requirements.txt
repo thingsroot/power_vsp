@@ -1,0 +1,6 @@
+flask
+flask-mqtt
+llama-mqtt
+ConfigParser
+pypiwin32
+wmi
