@@ -21,6 +21,7 @@ class TcpClientHander(Handler, threading.Thread):
                 self._socket = s
                 while not self._thread_stop:
                     data = s.recv(1024)
+                    self._peer_recv_count += len(data)
                     if data:
                         self.send(data)
                     else:
@@ -42,7 +43,8 @@ class TcpClientHander(Handler, threading.Thread):
 
     def on_recv(self, data):
         if self._socket:
-            self._socket.send(data)
+            sent_size = self._socket.send(data)
+            self._peer_send_count += sent_size
         else:
             logging.warning("Socket is not connected!")
 

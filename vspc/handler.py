@@ -9,6 +9,8 @@ class Handler:
         self._c_user_data = None
         self._recv_count = 0
         self._send_count = 0
+        self._peer_send_count = 0
+        self._peer_recv_count = 0
         self._handle = None
         self._open_pid = None
         self._open_app = None
@@ -43,6 +45,8 @@ class Handler:
         data['app_path'] = self._open_app
         data['recv_count'] = self._recv_count
         data['send_count'] = self._send_count
+        data['peer_recv_count'] = self._peer_recv_count
+        data['peer_send_count'] = self._peer_send_count
         for key in self._attributes:
             data[key] = self._attributes.get(key)
         return data

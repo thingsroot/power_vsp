@@ -1,18 +1,24 @@
 import logging
 import os
-from services_runner import Services_Runner
+# from services_runner import Services_Runner
+from hbmqtt_broker import MQTTBroker
 from mqtt_stream_pub import MQTTStreamPub
 from vspc.manager import VSPCManager
 from cloud_services.vspc_service import VSPC_Service
 from admin import start_admin
+from vspc_conf import broker_config
+
 
 if __name__ == '__main__':
     formatter = "[%(asctime)s] :: %(levelname)s :: %(name)s :: %(message)s"
     logging.basicConfig(level=logging.INFO, format=formatter)
-    bin_x86_path = os.path.dirname(os.path.realpath(__file__)) + "/bin_x86/"
-    runner = Services_Runner(bin_x86_path, bin_x86_path + "mosquitto.exe")
-    logging.info("Staring service runner..")
-    runner.start()
+    # bin_x86_path = os.path.dirname(os.path.realpath(__file__)) + "/bin_x86/"
+    # runner = Services_Runner(bin_x86_path, bin_x86_path + "mosquitto.exe")
+    # logging.info("Staring service runner..")
+    # runner.start()
+    broker = MQTTBroker(broker_config)
+    logging.info("Staring hbmqtt broker..")
+    broker.start()
 
     vspc_stream_pub = MQTTStreamPub()
     logging.info("Staring mqtt stream publisher..")

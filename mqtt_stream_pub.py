@@ -3,6 +3,7 @@ import logging
 import os
 import base64
 import paho.mqtt.client as mqtt
+from vspc_conf import MQTT_PROT
 
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -25,8 +26,8 @@ def on_message(client, userdata, msg):
 class MQTTStreamPub(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        self.host = "127.0.0.1"
-        self.port = 1883
+        self.host = "localhost"
+        self.port = MQTT_PROT
         self.clientid = "STREAM_PUB"
         self.keepalive = 60
         self.sub_devs = set()

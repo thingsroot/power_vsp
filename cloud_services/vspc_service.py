@@ -5,6 +5,7 @@ import vspc
 from cloud_services import *
 from vspc.tcp_client_h import TcpClientHander
 from vspc.tcp_server_h import TcpServerHandler
+from vspc_conf import MQTT_PROT
 
 API_RESULT = "@api/RESULT"
 API_LIST = "@api/list"
@@ -14,7 +15,8 @@ match_api = re.compile(r'^@api/(.+)$')
 class VSPC_Service(BaseService):
     def __init__(self, manager):
         self._manager = manager
-        BaseService.__init__(self, "localhost:1883", {
+        mqtt_conn = "localhost:{0}".format(MQTT_PROT)
+        BaseService.__init__(self, mqtt_conn, {
             "api": "v1/vspc/api",
         })
 
