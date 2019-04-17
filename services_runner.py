@@ -4,6 +4,7 @@ import threading
 import pythoncom
 import win32process
 import win32event
+import time
 
 
 class Services_Runner(threading.Thread):
@@ -49,6 +50,7 @@ class Services_Runner(threading.Thread):
                     exit_code = win32process.GetExitCodeProcess(subprocess)
                     logging.warning("{0} exited with code {1}".format(self._process_name, exit_code))
                     if not self._thread_stop:
+                        time.sleep(3)
                         subprocess = self.CreateProcess()
             except Exception as ex:
                 logging.exception(ex)

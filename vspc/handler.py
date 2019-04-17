@@ -1,10 +1,12 @@
 import logging
 from vspc import *
+from helper import _dict
 
 
 class Handler:
-    def __init__(self, name):
-        self._name = name
+    def __init__(self):
+        self._port_key = None
+        self._c_user_data = None
         self._recv_count = 0
         self._send_count = 0
         self._handle = None
@@ -12,6 +14,15 @@ class Handler:
         self._open_app = None
         self._attributes = {}
         self._stream_pub = None
+
+    def is_port(self, name):
+        return self._port_key == name or str(self._port_key) == name
+
+    def set_port_key(self, key):
+        self._port_key = key
+
+    def set_user_data(self, user_data):
+        self._c_user_data = user_data
 
     def on_recv(self, data):
         pass
@@ -26,20 +37,21 @@ class Handler:
         self._stream_pub = stream_pub
 
     def as_dict(self):
-        data = {}
+        data = _dict({})
         data['name'] = self._name
         data['pid'] = self._open_pid
         data['app_path'] = self._open_app
         data['recv_count'] = self._recv_count
         data['send_count'] = self._send_count
         for key in self._attributes:
-            data.set(key, self._attributes.get(key))
+            data[key] = self._attributes.get(key)
+        return data
 
     def on_event(self, event, ul_value):
         if event == ftvspcPortEventOpen:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
             self._open_pid = app.contents.dwPid
-            self._open_app = app.contents.cAppPath
+            self._open_app = str(app.contents.cAppPath, 'GB2312')
             logging.debug("Port {0} opened.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
                           self._name, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
             return
@@ -57,6 +69,8 @@ class Handler:
             return 1
 
         if event == ftvspcPortEventClose:
+            self._open_pid = -1
+            self._open_app = ""
             logging.debug("Port {0} Closed. {1}}", self._name, ul_value)
 
         if event == ftvspcPortEventRxChar:
@@ -140,11 +154,11 @@ class Handler:
         if event == ftvspcPortEventTimeouts:
             timeouts = cast(ul_value, POINTER(COMMTIMEOUTS))
             self._attributes[PortEventNames[event]] = {
-                "ReadIntervalTimeout", timeouts.contents.ReadIntervalTimeout,
-                "ReadTotalTimeoutMultiplier", timeouts.contents.ReadTotalTimeoutMultiplier,
-                "ReadTotalTimeoutConstant", timeouts.contents.ReadTotalTimeoutConstant,
-                "WriteTotalTimeoutMultiplier", timeouts.contents.WriteTotalTimeoutMultiplier,
-                "WriteTotalTimeoutConstant", timeouts.contents.WriteTotalTimeoutConstant,
+                "ReadIntervalTimeout": timeouts.contents.ReadIntervalTimeout,
+                "ReadTotalTimeoutMultiplier": timeouts.contents.ReadTotalTimeoutMultiplier,
+                "ReadTotalTimeoutConstant": timeouts.contents.ReadTotalTimeoutConstant,
+                "WriteTotalTimeoutMultiplier": timeouts.contents.WriteTotalTimeoutMultiplier,
+                "WriteTotalTimeoutConstant": timeouts.contents.WriteTotalTimeoutConstant,
             }
 
         if event == ftvspcPortEventOutxCtsFlow:

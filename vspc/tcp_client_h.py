@@ -1,15 +1,16 @@
 import logging
 import threading
 import socket
+import time
 from vspc.handler import Handler
 
 
 class TcpClientHander(Handler, threading.Thread):
-    def __init__(self, name, host, port):
+    def __init__(self, host, port):
         self._host = host
         self._port = port
         self._thread_stop = False
-        Handler.__init__(self, name)
+        Handler.__init__(self)
         threading.Thread.__init__(self)
 
     def run(self):
@@ -29,9 +30,12 @@ class TcpClientHander(Handler, threading.Thread):
                 if self._socket:
                     try:
                         self._socket.close()
+                        self._socket = None
                     except Exception as ex:
                         logging.exception(ex)
                         continue
+                if not self._thread_stop:
+                    time.sleep(3)
             except Exception as ex:
                 logging.exception(ex)
                 continue

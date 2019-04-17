@@ -68,14 +68,14 @@ class VSPC_Service(BaseService):
             raise NotFound("peer_not_found")
         handler = None
         if peer.get("type") == "tcp_client":
-            handler = TcpClientHander(port_name, peer.get("host"), peer.get("port"))
+            handler = TcpClientHander(peer.get("host"), peer.get("port"))
         if peer.get("type") == "tcp_server":
-            handler = TcpServerHandler(port_name, peer.get("host"), peer.get("port"))
+            handler = TcpServerHandler(peer.get("host"), peer.get("port"))
 
         if params.get("by_name") == 1:
             ret = self._manager.add(port_name, handler)
         else:
-            ret = self._manager.add_by_num(port_name, handler)
+            ret = self._manager.add_by_num(int(port_name), handler)
         if ret:
             return self.api_list_vir(id, {})
         else:
@@ -83,11 +83,21 @@ class VSPC_Service(BaseService):
 
     @whitelist.__func__
     def api_remove(self, id, params):
+        port_name = params.name
         if params.get("by_name") == 1:
-            ret = self._manager.remove(params.get("name"))
+            ret = self._manager.remove(port_name)
         else:
-            ret = self._manager.remove_by_num(params.get("num"))
+            ret = self._manager.remove_by_num(int(port_name))
         if ret:
             return self.api_list_vir(id, {})
         else:
             return self.failure("api", id, vspc.GetLastErrorMessage())
+
+    @whitelist.__func__
+    def api_info(self, id, params):
+        port_name = params.name
+        ret = self._manager.info(port_name)
+        if ret:
+            return self.success("api", id, ret)
+        else:
+            return self.failure("api", id, "port_no_found")

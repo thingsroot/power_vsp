@@ -7,14 +7,14 @@ from vspc.handler import Handler
 
 
 class TcpServerHandler(Handler, threading.Thread):
-    def __init__(self, name, host, port):
+    def __init__(self, host, port):
         self._clients = []
         self._servers = []
         self._manager = None
         self._host = host
         self._port = port
         self._thread_stop = False
-        Handler.__init__(self, name)
+        Handler.__init__(self)
         threading.Thread.__init__(self)
 
     def start(self):

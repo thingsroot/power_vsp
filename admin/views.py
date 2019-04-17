@@ -2,7 +2,7 @@ import logging
 import uuid
 from admin import app
 from flask import json, jsonify, request, make_response
-from cloud_services import _dict
+from helper import _dict
 
 @app.route("/")
 def index():
@@ -16,7 +16,7 @@ def index():
 def vspc_api(method):
     service = app.vspc_service
     api_method = "{0}_{1}".format('api', method)
-    payload = _dict({})
+    payload = _dict(request.args)
     response = {}
     if request.method == 'POST':
         payload = _dict(json.loads(request.data))

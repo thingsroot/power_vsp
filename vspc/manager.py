@@ -4,6 +4,7 @@ import vspc
 import ctypes
 from time import sleep
 from vspc.handler import Handler
+from helper import _dict
 
 
 def vspc_event_cb(event, ul_value, context):
@@ -28,11 +29,11 @@ class VSPCManager(threading.Thread):
         self._mqtt_stream_pub = stream_pub
 
     def list(self):
-        return [handler.name() for handler in self._handlers]
+        return [handler.as_dict() for handler in self._handlers]
 
     def get(self, name):
         for handler in self._handlers:
-            if handler.name() == name:
+            if handler.is_port(name):
                 return handler
         return None
 
@@ -46,6 +47,7 @@ class VSPCManager(threading.Thread):
         else:
             logging.info("Created port {0}".format(name))
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
+        handler.set_user_data(cUserdata)
         handle = vspc.FtVspcAttach(name, g_vspc_port_event_cb, cUserdata)
 
         if not ret:
@@ -55,6 +57,7 @@ class VSPCManager(threading.Thread):
             logging.info("Attached port {0}".format(name))
 
         handler.set_handle(handle)
+        handler.set_port_key(name)
         handler.set_stream_pub(self._mqtt_stream_pub)
         handler.start()
         self._handlers.append(handler)
@@ -71,6 +74,7 @@ class VSPCManager(threading.Thread):
             logging.info("Created port by num{0}".format(num))
 
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
+        handler.set_user_data(cUserdata)
         handle = vspc.FtVspcAttachByNum(num, g_vspc_port_event_cb, cUserdata)
 
         if not ret:
@@ -80,6 +84,7 @@ class VSPCManager(threading.Thread):
             logging.info("Attached port by num{0}".format(num))
 
         handler.set_handle(handle)
+        handler.set_port_key(num)
         handler.set_stream_pub(self._mqtt_stream_pub)
         handler.start()
         self._handlers.append(handler)
@@ -87,11 +92,7 @@ class VSPCManager(threading.Thread):
         return True
 
     def remove(self, name):
-        handler = None
-        for h in self._handlers:
-            if h.name() == name:
-                handler = h
-
+        handler = self.get(name)
         if not handler:
             logging.error("Failed to find port {0}!!".format(name))
             return False
@@ -115,13 +116,9 @@ class VSPCManager(threading.Thread):
         return True
 
     def remove_by_num(self, num):
-        handler = None
-        for h in self._handlers:
-            if h.name() == num:
-                handler = h
-
+        handler = self.get(num)
         if not handler:
-            logging.error("Failed to remove port by num {0}!!".format(num))
+            logging.error("Failed to find port by num {0}!!".format(num))
             return False
 
         ret = vspc.FtVspcDetach(handler.get_handle())
@@ -141,6 +138,13 @@ class VSPCManager(threading.Thread):
 
         self._handlers.remove(handler)
         return True
+
+    def info(self, name):
+        handler = self.get(name)
+        if not handler:
+            logging.error("Failed to find port {0}!!".format(name))
+            return False
+        return handler.as_dict()
 
     def on_event(self, event, ul_value):
         port = None
