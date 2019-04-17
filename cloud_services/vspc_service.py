@@ -2,8 +2,9 @@ import threading
 import logging
 import re
 import vspc
-from cloud_services import BaseService, whitelist
-from vspc.manager import VSPCManager
+from cloud_services import *
+from vspc.tcp_client_h import TcpClientHander
+from vspc.tcp_server_h import TcpServerHandler
 
 API_RESULT = "@api/RESULT"
 API_LIST = "@api/list"
@@ -11,14 +12,13 @@ match_api = re.compile(r'^@api/(.+)$')
 
 
 class VSPC_Service(BaseService):
-    def __init__(self):
-        self._manager = VSPCManager()
+    def __init__(self, manager):
+        self._manager = manager
         BaseService.__init__(self, "localhost:1883", {
             "api": "v1/vspc/api",
         })
 
     def start(self):
-        self._manager.start()
         BaseService.start(self)
 
     @whitelist.__func__
@@ -62,10 +62,20 @@ class VSPC_Service(BaseService):
 
     @whitelist.__func__
     def api_add(self, id, params):
+        port_name = params.name
+        peer = params.get("peer")
+        if not peer:
+            raise NotFound("peer_not_found")
+        handler = None
+        if peer.get("type") == "tcp_client":
+            handler = TcpClientHander(port_name, peer.get("host"), peer.get("port"))
+        if peer.get("type") == "tcp_server":
+            handler = TcpServerHandler(port_name, peer.get("host"), peer.get("port"))
+
         if params.get("by_name") == 1:
-            ret = self._manager.add(params.get("name"))
+            ret = self._manager.add(port_name, handler)
         else:
-            ret = self._manager.add_by_num(params.get("num"))
+            ret = self._manager.add_by_num(port_name, handler)
         if ret:
             return self.api_list_vir(id, {})
         else:

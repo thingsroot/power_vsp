@@ -461,7 +461,6 @@ def FtVspcRead(port_handle, len):
 
 
 def FtVspcWrite(port_handle, data):
-    data = data.encode('utf-8')
     ret = api.FtVspcWrite(port_handle, create_string_buffer(data), len(data))
 
     if ret == 0:

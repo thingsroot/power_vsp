@@ -11,6 +11,7 @@ class Handler:
         self._open_pid = None
         self._open_app = None
         self._attributes = {}
+        self._stream_pub = None
 
     def on_recv(self, data):
         pass
@@ -20,6 +21,9 @@ class Handler:
 
     def get_handle(self):
         return self._handle
+
+    def set_stream_pub(self, stream_pub):
+        self._stream_pub = stream_pub
 
     def as_dict(self):
         data = {}
@@ -59,7 +63,11 @@ class Handler:
             logging.debug("Port {0} RxChar. {1}}", self._name, ul_value)
             sz = FtVspcGetInQueueBytes(self._handle)
             data = FtVspcRead(self._handle, sz)
-            self.on_recv(data)
+
+            if data:
+                if self._stream_pub:
+                    self._stream_pub.vspc_out_pub(self._name, data)
+                self.on_recv(data)
 
         if event == ftvspcPortEventDtr:
             self._attributes[PortEventNames[event]] = ul_value == 1
@@ -186,5 +194,8 @@ class Handler:
         return None
 
     def send(self, data):
-        return FtVspcWrite(self._handle, data)
+        ret = FtVspcWrite(self._handle, data)
+        if ret and self._stream_pub:
+            self._stream_pub.vspc_out_pub(self._name, data)
+        return ret
 

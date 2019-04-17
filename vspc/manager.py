@@ -21,10 +21,11 @@ g_vspc_port_event_cb = vspc.EventCB(vspc_port_event_cb)
 
 
 class VSPCManager(threading.Thread):
-    def __init__(self):
+    def __init__(self, stream_pub):
         threading.Thread.__init__(self)
         self._handlers = []
         self._thread_stop = False
+        self._mqtt_stream_pub = stream_pub
 
     def list(self):
         return [handler.name() for handler in self._handlers]
@@ -44,8 +45,6 @@ class VSPCManager(threading.Thread):
             return False
         else:
             logging.info("Created port {0}".format(name))
-        if not handler:
-            handler = Handler(name)
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
         handle = vspc.FtVspcAttach(name, g_vspc_port_event_cb, cUserdata)
 
@@ -56,6 +55,8 @@ class VSPCManager(threading.Thread):
             logging.info("Attached port {0}".format(name))
 
         handler.set_handle(handle)
+        handler.set_stream_pub(self._mqtt_stream_pub)
+        handler.start()
         self._handlers.append(handler)
 
         return True
@@ -69,8 +70,6 @@ class VSPCManager(threading.Thread):
         else:
             logging.info("Created port by num{0}".format(num))
 
-        if not handler:
-            handler = Handler(num)
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
         handle = vspc.FtVspcAttachByNum(num, g_vspc_port_event_cb, cUserdata)
 
@@ -81,6 +80,8 @@ class VSPCManager(threading.Thread):
             logging.info("Attached port by num{0}".format(num))
 
         handler.set_handle(handle)
+        handler.set_stream_pub(self._mqtt_stream_pub)
+        handler.start()
         self._handlers.append(handler)
 
         return True
@@ -169,7 +170,7 @@ class VSPCManager(threading.Thread):
             logging.fatal("Failed to Initialize VSPC Library")
             return
 
-        self.add_by_num(4)
+        # self.add_by_num(4, Handler(name))
 
         while not self._thread_stop:
             sleep(1)

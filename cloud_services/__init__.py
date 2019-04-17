@@ -6,10 +6,39 @@ from llama import mqtt
 
 match_routes = re.compile(r'^@([^/]+)/(.+)$')
 
+
+class _dict(dict):
+    """dict like object that exposes keys as attributes"""
+
+    def __getattr__(self, key):
+        ret = self.get(key)
+        if not ret and key.startswith("__"):
+            raise AttributeError()
+        return ret
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+    def __getstate__(self):
+        return self
+
+    def __setstate__(self, d):
+        self.update(d)
+
+    def update(self, d):
+        """update and return self -- the missing dict feature in python"""
+        super(_dict, self).update(d)
+        return self
+
+    def copy(self):
+        return _dict(dict(self).copy())
+
+
 @staticmethod
 def whitelist(f):
     f.whitelisted = True
     return f
+
 
 class Forbidden(Exception):
     result = False
@@ -37,12 +66,15 @@ class BaseService(threading.Thread):
         threading.Thread.__init__(self)
 
     def start(self):
+        threading.Thread.start(self)
+
+    def run(self):
         # Connect to MQTT broker and start dispatch loop
         dispatch, receive = mqtt.connect(self._mqtt_server, self._routes)
 
         for action in receive():
             action_type = action["type"]
-            payload = action.get("payload")
+            payload = _dict(action.get("payload"))
             ag = match_routes.match(action_type)
             if ag:
                 ag = ag.groups()
@@ -67,8 +99,6 @@ class BaseService(threading.Thread):
             else:
                 dispatch(self.failure(route_key, uuid.uuid1(), "Topic api missing"))
 
-        threading.Thread.start(self)
-
     def is_whitelisted(self, method):
         fn = getattr(self, method, None)
         if not fn:
@@ -78,8 +108,8 @@ class BaseService(threading.Thread):
         return True
 
     def failure(self, route_key, id, error_msg):
-        assert(route_key and self._routes[route_key])
-        assert(id and error_msg)
+        assert (route_key and self._routes[route_key])
+        assert (id and error_msg)
         return {
             "type": "@{0}/RESULT".format(route_key),
             "payload": {
@@ -90,8 +120,8 @@ class BaseService(threading.Thread):
         }
 
     def success(self, route_key, id, data):
-        assert(route_key and self._routes[route_key])
-        assert(id and data)
+        assert (route_key and self._routes[route_key])
+        assert (id and data)
         return {
             "type": "@{0}/RESULT".format(route_key),
             "payload": {
