@@ -2,7 +2,7 @@ import threading
 import logging
 import vspc
 import ctypes
-from time import sleep
+import time
 from vspc.handler import Handler
 from helper import _dict
 
@@ -46,6 +46,9 @@ class VSPCManager(threading.Thread):
             return False
         else:
             logging.info("Created port {0}".format(name))
+
+        # handler.set_info(port_info)
+
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
         handler.set_user_data(cUserdata)
         handle = vspc.FtVspcAttach(name, g_vspc_port_event_cb, cUserdata)
@@ -72,6 +75,8 @@ class VSPCManager(threading.Thread):
             return False
         else:
             logging.info("Created port by num{0}".format(num))
+
+        # handler.set_info(port_info)
 
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
         handler.set_user_data(cUserdata)
@@ -177,7 +182,7 @@ class VSPCManager(threading.Thread):
         # self.add_by_num(4, Handler(name))
 
         while not self._thread_stop:
-            sleep(1)
+            time.sleep(1)
 
         vspc.FtVspcApiClose()
         logging.warning("Close VSPC Library!!!")

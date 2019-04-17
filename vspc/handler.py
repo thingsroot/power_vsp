@@ -6,16 +6,17 @@ from helper import _dict
 class Handler:
     def __init__(self):
         self._port_key = None
+        self._port_num = None
+        self._port_name = None
         self._c_user_data = None
         self._recv_count = 0
         self._send_count = 0
-        self._peer_send_count = 0
-        self._peer_recv_count = 0
         self._handle = None
         self._open_pid = None
         self._open_app = None
         self._attributes = {}
         self._stream_pub = None
+        self._peer_state = 'INITIALIZED'
 
     def is_port(self, name):
         return self._port_key == name or str(self._port_key) == name
@@ -25,6 +26,10 @@ class Handler:
 
     def set_user_data(self, user_data):
         self._c_user_data = user_data
+
+    def set_info(self, num, name):
+        self._port_num = num
+        self._port_name = name
 
     def on_recv(self, data):
         pass
@@ -38,17 +43,22 @@ class Handler:
     def set_stream_pub(self, stream_pub):
         self._stream_pub = stream_pub
 
+    def peer_dict(self):
+        pass
+
     def as_dict(self):
         data = _dict({})
-        data['name'] = self._name
+        data['name'] = self._port_key
+        data['port_num'] = self._port_num
+        data['port_name'] = self._port_name
         data['pid'] = self._open_pid
         data['app_path'] = self._open_app
         data['recv_count'] = self._recv_count
         data['send_count'] = self._send_count
-        data['peer_recv_count'] = self._peer_recv_count
-        data['peer_send_count'] = self._peer_send_count
         for key in self._attributes:
             data[key] = self._attributes.get(key)
+        peer_data = self.peer_dict() or {}
+        data.update(peer_data)
         return data
 
     def on_event(self, event, ul_value):

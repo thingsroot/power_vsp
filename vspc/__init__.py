@@ -648,3 +648,30 @@ def FtVspcGetInfo():
         return None
     return info
 
+'''
+def FtVspcGetPortInfoByNum(num):
+    info = FT_VSPC_PORT()
+    ret = api.FtVspcGetPortInfoByNum(num, pointer(info))
+    if ret == 0:
+        print_api_error()
+        return None
+    return {
+        "unPortNo": info.contents.unPortNo,
+        "cPortNameA": str(info.contents.cPortNameA, 'GB2312'),
+        "cPortNameW": str(info.contents.cPortNameW, 'GB2312')
+    }
+
+
+def FtVspcGetPortInfo(name):
+    info = FT_VSPC_PORT()
+    ret = api.FtVspcGetPortInfo(create_string_buffer(name), pointer(info))
+    if ret == 0:
+        print_api_error()
+        return None
+    return {
+        "unPortNo": info.contents.unPortNo,
+        "cPortNameA": str(info.contents.cPortNameA, 'GB2312'),
+        "cPortNameW": str(info.contents.cPortNameW, 'GB2312')
+    }
+'''
+
