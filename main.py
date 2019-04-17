@@ -1,7 +1,8 @@
 import logging
 import os
+import vspc
 from services_runner import Services_Runner
-from cloud_services.vspc import VSPC_Service
+from cloud_services.vspc_service import VSPC_Service
 
 if __name__ == '__main__':
     formatter = "[%(asctime)s] :: %(levelname)s :: %(name)s :: %(message)s"

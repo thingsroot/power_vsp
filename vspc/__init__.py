@@ -151,31 +151,30 @@ def FtVspcApiClose():
 
 
 def FtVspcApiInit(event_cb_func, context, license_key):
-    ret = api.FtVspcApiInit(EventCB(event_cb_func),
-                            context,
-                            create_string_buffer(license_key))
-    if ret.value == 0:
+    license_key = license_key and create_string_buffer(license_key) or None
+    ret = api.FtVspcApiInitA(event_cb_func, context, license_key)
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcApplyKey(license_key):
-    ret = api.FtVspcApplyKey(create_string_buffer(license_key))
-    if ret.value == 0:
+    ret = api.FtVspcApplyKeyA(create_string_buffer(license_key))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcGetLastError():
     ret = api.FtVspcGetLastError()
-    return ret.value
+    return ret
 
 
 def FtVspcGetErrorMessage(ErrorCode):
     s = create_string_buffer(b'\000' * 1024)
     sz = api.FtVspcGetErrorMessageA(ErrorCode, pointer(s), 1024)
     if sz > 0:
-        return s[0, sz.value]
+        return s.value.decode('utf-8')
     return "UNKNOWN"
 
 
@@ -183,11 +182,15 @@ def print_api_error():
     eno = api.FtVspcGetLastError()
     logging.error("VSPC ERROR: {0}".format(FtVspcGetErrorMessage(eno)))
 
+def GetLastErrorMessage():
+    eno = api.FtVspcGetLastError()
+    return FtVspcGetErrorMessage(eno)
+
 
 def FtVspcEnumPhysical():
     s = c_int(0)
     ret = api.FtVspcEnumPhysical(pointer(s))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return s.value
@@ -196,7 +199,7 @@ def FtVspcEnumPhysical():
 def FtVspcEnumVirtual():
     s = c_int(0)
     ret = api.FtVspcEnumVirtual(pointer(s))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return s.value
@@ -204,159 +207,159 @@ def FtVspcEnumVirtual():
 
 def FtVspcGetPhysical(index):
     s = create_string_buffer(b'\000' * 256)
-    ret = api.FtVspcGetPhysical(index, pointer(s), 256)
-    if ret.value == 0:
+    ret = api.FtVspcGetPhysicalA(index, pointer(s), 256)
+    if ret == 0:
         print_api_error()
         return None
-    return s.value
+    return s.value.decode('utf-8')
 
 
 def FtVspcGetPhysicalNum(index):
     port_no = c_uint(0)
     ret = api.FtVspcGetPhysicalNum(index, pointer(port_no))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
-    return port_no.value
+    return port_no
 
 
 def FtVspcGetVirtual(index):
     s = create_string_buffer(b'\000' * 256)
     marked_for_deletion = c_uint(0)
-    ret = api.FtVspcGetVirtual(index, pointer(s), 256, pointer(marked_for_deletion))
-    if ret.value == 0:
+    ret = api.FtVspcGetVirtualA(index, pointer(s), 256, pointer(marked_for_deletion))
+    if ret == 0:
         print_api_error()
         return None
-    return s.value, marked_for_deletion != 1
+    return s.value.decode('utf-8')  #, marked_for_deletion != 0
 
 
 def FtVspcGetPhysicalNum(index):
     port_no = c_uint(0)
     marked_for_deletion = c_uint(0)
     ret = api.FtVspcGetPhysicalNum(index, pointer(port_no), pointer(marked_for_deletion))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
-    return port_no.value, marked_for_deletion != 1
+    return port_no.value  #, marked_for_deletion != 0
 
 
 def FtVspcCreatePort(port_name):
-    ret = api.FtVspcCreatePort(create_string_buffer(port_name))
-    if ret.value == 0:
+    ret = api.FtVspcCreatePortA(create_string_buffer(port_name))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreatePortEx(port_name, friendly_name, company_name):
-    ret = api.FtVspcCreatePortEx(create_string_buffer(port_name),
-                                 create_string_buffer(friendly_name),
-                                 create_string_buffer(company_name))
-    if ret.value == 0:
+    ret = api.FtVspcCreatePortExA(create_string_buffer(port_name),
+                                  create_string_buffer(friendly_name),
+                                  create_string_buffer(company_name))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreatePortByNum(num):
     ret = api.FtVspcCreatePortByNum(num)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreatePortOverlapped(name, real_alias):
-    ret = api.FtVspcCreatePortOverlapped(create_string_buffer(name),
-                                         create_string_buffer(real_alias))
-    if ret.value == 0:
+    ret = api.FtVspcCreatePortOverlappedA(create_string_buffer(name),
+                                          create_string_buffer(real_alias))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreatePortOverlappedEx(name, real_alias, friendly_name, company_name):
-    ret = api.FtVspcCreatePortOverlappedEx(create_string_buffer(name),
-                                           create_string_buffer(real_alias),
-                                           create_string_buffer(friendly_name),
-                                           create_string_buffer(company_name))
-    if ret.value == 0:
+    ret = api.FtVspcCreatePortOverlappedExA(create_string_buffer(name),
+                                            create_string_buffer(real_alias),
+                                            create_string_buffer(friendly_name),
+                                            create_string_buffer(company_name))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreatePortOverlappedByNum(num, real_alias):
-    ret = api.FtVspcCreatePortOverlappedByNum(num,
-                                              create_string_buffer(real_alias))
-    if ret.value == 0:
+    ret = api.FtVspcCreatePortOverlappedByNumA(num,
+                                               create_string_buffer(real_alias))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreateTwinPort(name, real_alias):
-    ret = api.FtVspcCreateTwinPort(create_string_buffer(name),
-                                   create_string_buffer(real_alias))
-    if ret.value == 0:
+    ret = api.FtVspcCreateTwinPortA(create_string_buffer(name),
+                                    create_string_buffer(real_alias))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreateTwinPortEx(name, real_alias, friendly_name, company_name):
-    ret = api.FtVspcCreateTwinPortEx(create_string_buffer(name),
-                                     create_string_buffer(real_alias),
-                                     create_string_buffer(friendly_name),
-                                     create_string_buffer(company_name))
-    if ret.value == 0:
+    ret = api.FtVspcCreateTwinPortExA(create_string_buffer(name),
+                                      create_string_buffer(real_alias),
+                                      create_string_buffer(friendly_name),
+                                      create_string_buffer(company_name))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcCreateTwinPortByNum(num, real_alias):
-    ret = api.FtVspcCreateTwinPortByNum(num,
-                                        create_string_buffer(real_alias))
-    if ret.value == 0:
+    ret = api.FtVspcCreateTwinPortByNumA(num,
+                                         create_string_buffer(real_alias))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcRemovePort(port_name):
-    ret = api.FtVspcRemovePort(create_string_buffer(port_name))
-    if ret.value == 0:
+    ret = api.FtVspcRemovePortA(create_string_buffer(port_name))
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcRemovePortByNum(port_num):
     ret = api.FtVspcRemovePortByNum(port_num)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcAttach(port_name, event_cb, context):
-    ret = api.FtVspcAttach(create_string_buffer(port_name),
-                           PortEventCB(event_cb),
-                           context)
-    if ret.value == 0:
+    ret = api.FtVspcAttachA(create_string_buffer(port_name),
+                            event_cb,
+                            context)
+    if ret == 0:
         print_api_error()
     return ret
 
 
 def FtVspcAttachByNum(port_num, event_cb, context):
     ret = api.FtVspcAttachByNum(port_num,
-                                PortEventCB(event_cb),
+                                event_cb,
                                 context)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
     return ret
 
 def FtVspcDetach(port_handle):
     ret = api.FtVspcDetach(port_handle)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcGetPermanent(name):
     permanent = c_uint(0)
-    ret = api.FtVspcGetPermanent(create_string_buffer(name), pointer(permanent))
-    if ret.value == 0:
+    ret = api.FtVspcGetPermanentA(create_string_buffer(name), pointer(permanent))
+    if ret == 0:
         print_api_error()
         return None
     return permanent.value != 0
@@ -365,7 +368,7 @@ def FtVspcGetPermanent(name):
 def FtVspcGetPermanentByNum(num):
     permanent = c_uint(0)
     ret = api.FtVspcGetPermanentByNum(num, pointer(permanent))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return permanent.value != 0
@@ -373,8 +376,8 @@ def FtVspcGetPermanentByNum(num):
 
 def FtVspcGetPortType(name):
     permanent = c_uint(0)
-    ret = api.FtVspcGetPortType(create_string_buffer(name), pointer(permanent))
-    if ret.value == 0:
+    ret = api.FtVspcGetPortTypeA(create_string_buffer(name), pointer(permanent))
+    if ret == 0:
         print_api_error()
         return None
     return permanent.value != 0
@@ -383,16 +386,16 @@ def FtVspcGetPortType(name):
 def FtVspcGetPortTypeByNum(num):
     permanent = c_uint(0)
     ret = api.FtVspcGetPortTypeByNum(num, pointer(permanent))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
-    return permanent.value != 0
+    return permanent != 0
 
 
 def FtVspcGetQueryOpen(name):
     result = c_uint(0)
-    ret = api.FtVspcGetQueryOpen(create_string_buffer(name), pointer(result))
-    if ret.value == 0:
+    ret = api.FtVspcGetQueryOpenA(create_string_buffer(name), pointer(result))
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -401,7 +404,7 @@ def FtVspcGetQueryOpen(name):
 def FtVspcGetQueryOpenByNum(num):
     result = c_uint(0)
     ret = api.FtVspcGetQueryOpenByNum(num, pointer(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -411,10 +414,10 @@ def FtVspcSetPermanent(name, permanent):
     c_per = c_uint(0)
     if permanent is True:
         c_per = c_uint(1)
-    ret = api.FtVspcSetPermanent(create_string_buffer(name), c_per)
-    if ret.value == 0:
+    ret = api.FtVspcSetPermanentA(create_string_buffer(name), c_per)
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcSetPermanentByNum(num, permanent):
@@ -422,19 +425,19 @@ def FtVspcSetPermanentByNum(num, permanent):
     if permanent is True:
         c_per = c_uint(1)
     ret = api.FtVspcSetPermanentByNum(num, c_per)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcSetQueryOpen(name, query_open):
     c_open = c_uint(0)
     if query_open is True:
         c_open = c_uint(1)
-    ret = api.FtVspcSetQueryOpen(create_string_buffer(name), c_open)
-    if ret.value == 0:
+    ret = api.FtVspcSetQueryOpenA(create_string_buffer(name), c_open)
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcSetQueryOpenByNum(num, query_open):
@@ -442,16 +445,16 @@ def FtVspcSetQueryOpenByNum(num, query_open):
     if query_open is True:
         c_open = c_uint(1)
     ret = api.FtVspcSetQueryOpenByNum(num, c_open)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
-    return ret.value != 0
+    return ret != 0
 
 
 def FtVspcRead(port_handle, len):
-    s = create_string_buffer(b'\000' * int(len))
+    s = create_string_buffer(b'\000' * len)
     ret_len = c_ulong(0)
     ret = api.FtVspcRead(port_handle, s, len, byref(ret_len))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return s[0:ret_len.value]
@@ -461,7 +464,7 @@ def FtVspcWrite(port_handle, data):
     data = data.encode('utf-8')
     ret = api.FtVspcWrite(port_handle, create_string_buffer(data), len(data))
 
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -470,7 +473,7 @@ def FtVspcWrite(port_handle, data):
 def FtVspcGetBitrateEmulation(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetBitrateEmulation(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -479,7 +482,7 @@ def FtVspcGetBitrateEmulation(port_handle):
 def FtVspcGetBreak(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetBreak(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -488,7 +491,7 @@ def FtVspcGetBreak(port_handle):
 def FtVspcGetCts(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetCts(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -497,7 +500,7 @@ def FtVspcGetCts(port_handle):
 def FtVspcGetDcd(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetDcd(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -506,7 +509,7 @@ def FtVspcGetDcd(port_handle):
 def FtVspcGetDsr(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetDsr(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -515,7 +518,7 @@ def FtVspcGetDsr(port_handle):
 def FtVspcGetFraming(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetFraming(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -524,7 +527,7 @@ def FtVspcGetFraming(port_handle):
 def FtVspcGetInQueueBytes(port_handle):
     result = c_ulong(0)
     ret = api.FtVspcGetInQueueBytes(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value
@@ -533,7 +536,7 @@ def FtVspcGetInQueueBytes(port_handle):
 def FtVspcGetOverrun(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetOverrun(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -542,7 +545,7 @@ def FtVspcGetOverrun(port_handle):
 def FtVspcGetParity(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetParity(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
     return result.value != 0
@@ -551,16 +554,16 @@ def FtVspcGetParity(port_handle):
 def FtVspcGetRing(port_handle):
     result = c_uint(0)
     ret = api.FtVspcGetRing(port_handle, byref(result))
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result != 0
 
 
 def FtVspcSetBitrateEmulation(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetBitrateEmulation(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -569,7 +572,7 @@ def FtVspcSetBitrateEmulation(port_handle, b_val):
 def FtVspcSetBreak(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetBreak(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -578,7 +581,7 @@ def FtVspcSetBreak(port_handle, b_val):
 def FtVspcSetCts(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetCts(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -587,7 +590,7 @@ def FtVspcSetCts(port_handle, b_val):
 def FtVspcSetDcd(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetDcd(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -596,7 +599,7 @@ def FtVspcSetDcd(port_handle, b_val):
 def FtVspcSetDsr(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetDsr(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -605,7 +608,7 @@ def FtVspcSetDsr(port_handle, b_val):
 def FtVspcSetFraming(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetFraming(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -614,7 +617,7 @@ def FtVspcSetFraming(port_handle, b_val):
 def FtVspcSetOverrun(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetOverrun(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -623,7 +626,7 @@ def FtVspcSetOverrun(port_handle, b_val):
 def FtVspcSetParity(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetParity(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -632,7 +635,7 @@ def FtVspcSetParity(port_handle, b_val):
 def FtVspcSetRing(port_handle, b_val):
     bval = b_val is True and c_uint(1) or c_uint(0)
     ret = api.FtVspcSetRing(port_handle, bval)
-    if ret.value == 0:
+    if ret == 0:
         print_api_error()
         return False
     return True
@@ -640,8 +643,8 @@ def FtVspcSetRing(port_handle, b_val):
 
 def FtVspcGetInfo():
     info = FTVSPC_INFO()
-    ret = api.FtVspcGetInfoW(pointer(info))
-    if ret.value == 0:
+    ret = api.FtVspcGetInfoA(pointer(info))
+    if ret == 0:
         print_api_error()
         return None
     return info

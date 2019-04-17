@@ -1,12 +1,26 @@
-import os
 import threading
 import logging
+import vspc
+import ctypes
 from time import sleep
-from vspc import *
-from handler import Handler
+from vspc.handler import Handler
 
 
-class Manager(threading.Thread):
+def vspc_event_cb(event, ul_value, context):
+    manager = ctypes.cast(context, ctypes.POINTER(ctypes.py_object)).contents.value
+    manager.on_event(event, ul_value)
+
+
+def vspc_port_event_cb(event, ul_value, context):
+    handler = ctypes.cast(context,ctypes. POINTER(ctypes.py_object)).contents.value
+    handler.on_event(event, ul_value)
+
+
+g_vspc_event_cb = vspc.EventCB(vspc_event_cb)
+g_vspc_port_event_cb = vspc.EventCB(vspc_port_event_cb)
+
+
+class VSPCManager(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self._handlers = []
@@ -21,59 +35,50 @@ class Manager(threading.Thread):
                 return handler
         return None
 
-    def get_port_event_cb(self, handler):
-        def vspc_port_event_cb(port_event, ul_value, context):
-            logging.trace(port_event, ul_value, context)
-            handler.on_event(port_event, ul_value, context)
+    def add(self, name, handler):
 
-        return vspc_port_event_cb
+        ret = vspc.FtVspcCreatePort(name)
 
-    def add(self, name):
-        port_name = create_string_buffer(name)
-
-        ret = FtVspcCreatePort(port_name)
-
-        if ret.value != 0 and ret.value != 1:
-            logging.error("Failed to create port {0}, reason: {1}".format(name, FtVspcGetErrorMessage(ret)))
+        if not ret:
+            logging.error("Failed to create port {0}, reason: {1}".format(name, vspc.GetLastErrorMessage()))
             return False
         else:
             logging.info("Created port {0}".format(name))
+        if not handler:
+            handler = Handler(name)
+        cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
+        handle = vspc.FtVspcAttach(name, g_vspc_port_event_cb, cUserdata)
 
-        handler = Handler(name)
-        port_event_cb = PortEventCB(self.get_port_event_cb(handler))
-
-        handle = FtVspcAttach(port_name, port_event_cb, None)
-
-        if ret.value != 1:
-            logging.error("Failed to attach port {0}, reason: {1}".format(name, FtVspcGetErrorMessage(ret)))
+        if not ret:
+            logging.error("Failed to attach port {0}, reason: {1}".format(name, vspc.GetLastErrorMessage()))
             return False
         else:
-            logging.info("Created port {0}".format(name))
+            logging.info("Attached port {0}".format(name))
 
         handler.set_handle(handle)
         self._handlers.append(handler)
 
         return True
 
-    def add_by_num(self, num):
-        ret = FtVspcCreatePortByNum(num)
+    def add_by_num(self, num, handler):
+        ret = vspc.FtVspcCreatePortByNum(num)
 
-        if ret.value != 0 and ret.value != 1:
-            logging.error("Failed to create port by num {0}, reason: {1}".format(num, FtVspcGetErrorMessage(ret)))
+        if not ret:
+            logging.error("Failed to create port by num {0}, reason: {1}".format(num, vspc.GetLastErrorMessage()))
             return False
         else:
             logging.info("Created port by num{0}".format(num))
 
-        handler = Handler(num)
-        port_event_cb = PortEventCB(self.get_port_event_cb(handler))
+        if not handler:
+            handler = Handler(num)
+        cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
+        handle = vspc.FtVspcAttachByNum(num, g_vspc_port_event_cb, cUserdata)
 
-        handle = FtVspcAttachByNum(num, port_event_cb)
-
-        if ret.value != 1:
-            logging.error("Failed to attach port by num {0}, reason: {1}".format(num, FtVspcGetErrorMessage(ret)))
+        if not ret:
+            logging.error("Failed to attach port by num {0}, reason: {1}".format(num, vspc.GetLastErrorMessage()))
             return False
         else:
-            logging.info("Created port by num{0}".format(num))
+            logging.info("Attached port by num{0}".format(num))
 
         handler.set_handle(handle)
         self._handlers.append(handler)
@@ -90,17 +95,17 @@ class Manager(threading.Thread):
             logging.error("Failed to find port {0}!!".format(name))
             return False
 
-        ret = FtVspcDetach(handler.get_handle())
+        ret = vspc.FtVspcDetach(handler.get_handle())
 
-        if ret.value != 0 and ret.value != 1:
-            logging.error("Failed to detach port {0}, reason: {1}".format(name, FtVspcGetErrorMessage(ret)))
+        if not ret:
+            logging.error("Failed to detach {0}, reason: {1}".format(name, vspc.GetLastErrorMessage()))
             return False
         else:
             logging.info("Removed port {0}".format(name))
 
-        ret = FtVspcRemovePort(name)
-        if ret.value != 0 and ret.value != 1:
-            logging.error("Failed to remove port {0}, reason: {1}".format(name, FtVspcGetErrorMessage(ret)))
+        ret = vspc.FtVspcRemovePort(name)
+        if not ret:
+            logging.error("Failed to remove port {0}, reason: {1}".format(name, vspc.GetLastErrorMessage()))
             return False
         else:
             logging.info("Removed port {0}".format(name))
@@ -115,20 +120,20 @@ class Manager(threading.Thread):
                 handler = h
 
         if not handler:
-            logging.error("Failed to find port by num {0}!!".format(num))
+            logging.error("Failed to remove port by num {0}!!".format(num))
             return False
 
-        ret = FtVspcDetach(handler.get_handle())
+        ret = vspc.FtVspcDetach(handler.get_handle())
 
-        if ret.value != 0 and ret.value != 1:
-            logging.error("Failed to detach port by num {0}, reason: {1}".format(num, FtVspcGetErrorMessage(ret)))
+        if not ret:
+            logging.error("Failed to detach port by num {0}, reason: {1}".format(num, vspc.GetLastErrorMessage()))
             return False
         else:
             logging.info("Detach port by num {0}".format(num))
 
-        ret = FtVspcRemovePortByNum(num)
-        if ret.value != 0 and ret.value != 1:
-            logging.error("Failed to remove port by num {0}, reason: {1}".format(num, FtVspcGetErrorMessage(ret)))
+        ret = vspc.FtVspcRemovePortByNum(num)
+        if not ret:
+            logging.error("Failed to remove port by num {0}, reason: {1}".format(num, vspc.GetLastErrorMessage()))
             return False
         else:
             logging.info("Removed port by num {0}".format(num))
@@ -136,43 +141,40 @@ class Manager(threading.Thread):
         self._handlers.remove(handler)
         return True
 
-    def get_event_cb(self):
-        def vspc_event_cb(event, ul_value, context):
-            self.on_event(event, ul_value, context)
-        return vspc_event_cb
-
-    def on_event(self, event, ul_value, context):
+    def on_event(self, event, ul_value):
         port = None
-        if event == ftvspcEventThirdPartyPortCreate:
-            port = cast(ul_value, POINTER(FT_VSPC_PORT))
-        if event == ftvspcEventThirdPartyPortRemove:
-            port = cast(ul_value, POINTER(FT_VSPC_PORT))
-        if event == ftvspcEventPortCreate:
-            port = cast(ul_value, POINTER(FT_VSPC_PORT))
-        if event == ftvspcEventPortRemove:
-            port = cast(ul_value, POINTER(FT_VSPC_PORT))
-        if event == ftvspcEventTrialExpired:
-            port = cast(ul_value, POINTER(FT_VSPC_PORT))
-        if event == ftvspcEventPortLimitExceeded:
-            port = cast(ul_value, POINTER(FT_VSPC_PORT))
-        if event == ftvspcEventLicenseQuotaExceeded:
-            port = cast(ul_value, POINTER(FT_VSPC_PORT))
-        logging.trace("VSPC_Event_CB: {0} {1} {2}".format(port, ul_value, context))
+        if event == vspc.ftvspcEventThirdPartyPortCreate:
+            port = ctypes.cast(ul_value, ctypes.POINTER(vspc.FT_VSPC_PORT))
+        if event == vspc.ftvspcEventThirdPartyPortRemove:
+            port = ctypes.cast(ul_value, ctypes.POINTER(vspc.FT_VSPC_PORT))
+        if event == vspc.ftvspcEventPortCreate:
+            port = ctypes.cast(ul_value, ctypes.POINTER(vspc.FT_VSPC_PORT))
+        if event == vspc.ftvspcEventPortRemove:
+            port = ctypes.cast(ul_value, ctypes.POINTER(vspc.FT_VSPC_PORT))
+        if event == vspc.ftvspcEventTrialExpired:
+            port = ctypes.cast(ul_value, ctypes.POINTER(vspc.FT_VSPC_PORT))
+        if event == vspc.ftvspcEventPortLimitExceeded:
+            port = ctypes.cast(ul_value, ctypes.POINTER(vspc.FT_VSPC_PORT))
+        if event == vspc.ftvspcEventLicenseQuotaExceeded:
+            port = ctypes.cast(ul_value, ctypes.POINTER(vspc.FT_VSPC_PORT))
+        logging.debug("VSPC_Event_CB: {0} {1}".format(port, ul_value))
         return
 
     def run(self):
-        event_cb = EventCB(self.get_event_cb())
-        ret = FtVspcApiInit(event_cb, None, None)
-        logging.trace("FtVspcApiInit:", ret)
+        cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(self)), ctypes.c_void_p)
+        ret = vspc.FtVspcApiInit(g_vspc_event_cb, cUserdata, None)
+        logging.debug("FtVspcApiInit: {0}".format(ret))
 
-        if ret != 1:
-            logging.fatal("Failed to Initialize VSPC Library, ret ${0}".format(ret))
+        if not ret:
+            logging.fatal("Failed to Initialize VSPC Library")
             return
+
+        self.add_by_num(4)
 
         while not self._thread_stop:
             sleep(1)
 
-        FtVspcApiClose()
+        vspc.FtVspcApiClose()
         logging.warning("Close VSPC Library!!!")
 
     def stop(self):
