@@ -34,11 +34,10 @@ class TcpClientHander(Handler, threading.Thread):
                     data = s.recv(1024)
                     self._peer_recv_count += len(data)
                     self._stream_pub.socket_in_pub(self._port_key, data)
-                    if data:
-                        self.send(data)
-                    else:
+                    if not data:
                         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
                         break
+                    self.send(data)
                 ## closed
                 if self._socket:
                     self._peer_state = 'DISCONNECTED'
