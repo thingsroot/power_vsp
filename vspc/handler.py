@@ -18,6 +18,12 @@ class Handler:
         self._stream_pub = None
         self._peer_state = 'INITIALIZED'
 
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
     def is_port(self, name):
         return self._port_key == name or str(self._port_key) == name
 

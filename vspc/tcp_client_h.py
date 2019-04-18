@@ -19,6 +19,15 @@ class TcpClientHander(Handler, threading.Thread):
         Handler.__init__(self)
         threading.Thread.__init__(self)
 
+    def start(self):
+        Handler.start(self)
+        threading.Thread.start(self)
+
+    def stop(self):
+        self._thread_stop = True
+        self.join(1)
+        Handler.stop(self)
+
     def run(self):
         while not self._thread_stop:
             try:

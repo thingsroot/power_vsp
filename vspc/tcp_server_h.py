@@ -36,10 +36,16 @@ class TcpServerHandler(Handler, threading.Thread):
             self._peer_state = 'LISTENING'
             self._servers.append(server)
             self._clients.append(server)
+            Handler.start(self)
             threading.Thread.start(self)
         except Exception as ex:
             logging.exception(ex)
             return None
+
+    def stop(self):
+        self._thread_stop = True
+        self.join(1)
+        Handler.stop(self)
 
     def run(self):
         outputs = []

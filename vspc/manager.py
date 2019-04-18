@@ -101,6 +101,8 @@ class VSPCManager(threading.Thread):
             logging.error("Failed to find port {0}!!".format(name))
             return False
 
+        handler.stop()
+
         ret = vspc.FtVspcDetach(handler.get_handle())
 
         if not ret:
