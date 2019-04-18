@@ -116,6 +116,11 @@ class TcpServerHandler(Handler, threading.Thread):
             'peer_send_count': self._peer_send_count
         }
 
+    def clean_count(self):
+        self._peer_send_count = 0
+        self._peer_recv_count = 0
+        Handler.clean_count(self)
+
     def on_recv(self, data):
         for client in self._clients:
             sent_size = client.send(data)

@@ -66,6 +66,10 @@ class Handler:
         data.update(peer_data)
         return data
 
+    def clean_count(self):
+        self._recv_count = 0
+        self._send_count = 0
+
     def on_event(self, event, ul_value):
         if event == ftvspcPortEventOpen:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
@@ -99,6 +103,7 @@ class Handler:
 
             if data:
                 if self._stream_pub:
+                    self.__recv_count += len(data)
                     self._stream_pub.vspc_out_pub(self._port_key, data)
                 self.on_recv(data)
 
@@ -228,6 +233,8 @@ class Handler:
 
     def send(self, data):
         ret = FtVspcWrite(self._handle, data)
+        if ret:
+            self.__recv_count += len(data)
         if ret and self._stream_pub:
             self._stream_pub.vspc_out_pub(self._port_key, data)
         return ret
