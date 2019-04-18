@@ -13,6 +13,10 @@ class TcpServerHandler(Handler, threading.Thread):
         self._manager = None
         self._host = host
         self._port = port
+        self._sock_host = None
+        self._sock_port = 0
+        self._peer_host = None
+        self._peer_port = 0
         self._peer_send_count = 0
         self._peer_recv_count = 0
         self._thread_stop = False
@@ -23,9 +27,12 @@ class TcpServerHandler(Handler, threading.Thread):
         try:
             server = socket.socket()
             server.setblocking(0)
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
             server.bind((self._host, self._port))
             server.listen(5)
+            self._sock_host, self._sock_port = s.getsockname()
             self._peer_state = 'LISTENING'
             self._servers.append(server)
             self._clients.append(server)
@@ -47,6 +54,7 @@ class TcpServerHandler(Handler, threading.Thread):
                     if len(self._clients) > 0:
                         print('TODO:')
 
+                    self._peer_host, self._peer_port = conn.getpeername()
                     self._clients.append(conn)
                     self._peer_state = 'CONNECTED'
                     message_queues[conn] = queue.Queue()
@@ -64,6 +72,9 @@ class TcpServerHandler(Handler, threading.Thread):
                         if s in outputs:
                             outputs.remove(s)
                         self._clients.remove(s)
+                        if len(self._clients) == 0:
+                            self._peer_host = None,
+                            self._peer_port = 0
                         self._servers.remove(s)
                         del message_queues[s]
 
@@ -97,6 +108,10 @@ class TcpServerHandler(Handler, threading.Thread):
         return {
             'local_host': self._host,
             'local_port': self._port,
+            'sock_host': self._sock_host,
+            'sock_port': self._sock_port,
+            'peer_host': self._peer_host,
+            'peer_port': self._peer_port,
             'peer_recv_count': self._peer_recv_count,
             'peer_send_count': self._peer_send_count
         }

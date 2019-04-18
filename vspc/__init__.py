@@ -230,17 +230,17 @@ def FtVspcGetVirtual(index):
     if ret == 0:
         print_api_error()
         return None
-    return s.value.decode('utf-8')  #, marked_for_deletion != 0
+    return s.value.decode('utf-8'), marked_for_deletion != 0
 
 
-def FtVspcGetPhysicalNum(index):
+def FtVspcGetVirtualNum(index):
     port_no = c_uint(0)
     marked_for_deletion = c_uint(0)
-    ret = api.FtVspcGetPhysicalNum(index, pointer(port_no), pointer(marked_for_deletion))
+    ret = api.FtVspcGetVirtualNum(index, pointer(port_no), pointer(marked_for_deletion))
     if ret == 0:
         print_api_error()
         return None
-    return port_no.value  #, marked_for_deletion != 0
+    return port_no.value, marked_for_deletion != 0
 
 
 def FtVspcCreatePort(port_name):

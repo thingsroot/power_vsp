@@ -3,8 +3,7 @@ import logging
 import vspc
 import ctypes
 import time
-from vspc.handler import Handler
-from helper import _dict
+import json
 
 
 def vspc_event_cb(event, ul_value, context):
@@ -183,6 +182,10 @@ class VSPCManager(threading.Thread):
 
         while not self._thread_stop:
             time.sleep(1)
+
+            for handler in self._handlers:
+                info = json.dumps(handler.as_dict())
+                self._mqtt_stream_pub.vspc_status(handler.get_port_key(), info)
 
         vspc.FtVspcApiClose()
         logging.warning("Close VSPC Library!!!")

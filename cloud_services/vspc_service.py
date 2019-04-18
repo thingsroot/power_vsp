@@ -34,7 +34,7 @@ class VSPC_Service(BaseService):
         count = vspc.FtVspcEnumVirtual()
         vir_ports = []
         for i in range(0, count):
-            port_name = vspc.FtVspcGetVirtual(i)
+            port_name, mark_for_deletion = vspc.FtVspcGetVirtual(i)
             if port_name:
                 vir_ports.append(port_name)
         return self.success("api", id, {
@@ -57,7 +57,7 @@ class VSPC_Service(BaseService):
         count = vspc.FtVspcEnumVirtual()
         ports = []
         for i in range(0, count):
-            port_name = vspc.FtVspcGetVirtual(i)
+            port_name, mark_for_deletion = vspc.FtVspcGetVirtual(i)
             if port_name:
                 ports.append(port_name)
         return self.success("api", id, ports)

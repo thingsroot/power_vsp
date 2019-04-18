@@ -23,13 +23,18 @@ class Handler:
 
     def set_port_key(self, key):
         self._port_key = key
+        if type(self._port_key) == 'string':
+            self._port_name = self._port_key
+            self._port_num = self.get_port_num()
+        else:
+            self._port_num = self._port_key
+            self._port_name = self.get_port_name()
+
+    def get_port_key(self):
+        return self._port_key
 
     def set_user_data(self, user_data):
         self._c_user_data = user_data
-
-    def set_info(self, num, name):
-        self._port_num = num
-        self._port_name = name
 
     def on_recv(self, data):
         pass
@@ -67,34 +72,34 @@ class Handler:
             self._open_pid = app.contents.dwPid
             self._open_app = str(app.contents.cAppPath, 'GB2312')
             logging.debug("Port {0} opened.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
-                          self._name, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
+                          self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
             return
 
         if event == ftvspcPortEventOpenBeforeAttach:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
             logging.debug("Port {0} attached.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
-                          self._name, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
+                          self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
             return
 
         if event == ftvspcPortEventQueryOpen:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
             logging.debug("Port {0} QueryOpen.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
-                          self._name, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
+                          self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
             return 1
 
         if event == ftvspcPortEventClose:
             self._open_pid = -1
             self._open_app = ""
-            logging.debug("Port {0} Closed. {1}}", self._name, ul_value)
+            logging.debug("Port {0} Closed. {1}}", self._port_key, ul_value)
 
         if event == ftvspcPortEventRxChar:
-            logging.debug("Port {0} RxChar. {1}}", self._name, ul_value)
+            logging.debug("Port {0} RxChar. {1}}", self._port_key, ul_value)
             sz = FtVspcGetInQueueBytes(self._handle)
             data = FtVspcRead(self._handle, sz)
 
             if data:
                 if self._stream_pub:
-                    self._stream_pub.vspc_out_pub(self._name, data)
+                    self._stream_pub.vspc_out_pub(self._port_key, data)
                 self.on_recv(data)
 
         if event == ftvspcPortEventDtr:
@@ -224,6 +229,23 @@ class Handler:
     def send(self, data):
         ret = FtVspcWrite(self._handle, data)
         if ret and self._stream_pub:
-            self._stream_pub.vspc_out_pub(self._name, data)
+            self._stream_pub.vspc_out_pub(self._port_key, data)
         return ret
 
+    def get_port_name(self):
+        count = FtVspcEnumVirtual()
+        for i in range(0, count):
+            port_num, mark_for_deletion = FtVspcGetVirtualNum(i)
+            if port_num == self._port_key:
+                port_name, mark_for_deletion = FtVspcGetVirtual(i)
+                return port_name
+        return None
+
+    def get_port_num(self):
+        count = FtVspcEnumVirtual()
+        for i in range(0, count):
+            port_name, mark_for_deletion = FtVspcGetVirtual(i)
+            if port_name == self._port_key:
+                port_num, mark_for_deletion = FtVspcGetVirtualNum(i)
+                return port_num
+        return None

@@ -9,6 +9,10 @@ class TcpClientHander(Handler, threading.Thread):
     def __init__(self, host, port):
         self._host = host
         self._port = port
+        self._sock_host = None
+        self._sock_port = 0
+        self._peer_host = None
+        self._peer_port = 0
         self._thread_stop = False
         self._peer_send_count = 0
         self._peer_recv_count = 0
@@ -20,14 +24,16 @@ class TcpClientHander(Handler, threading.Thread):
             try:
                 self._peer_state = 'CONNECTING'
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                 s.connect((self._host, self._port))
-                self._peer_local_port = s.getsockopt()
+                self._sock_host, self._sock_port = s.getsockname()
+                self._peer_host, self._peer_port = s.getpeername()
                 self._peer_state = 'CONNECTED'
                 self._socket = s
                 while not self._thread_stop:
                     data = s.recv(1024)
                     self._peer_recv_count += len(data)
-                    self._stream_pub.socket_in_pub(data)
+                    self._stream_pub.socket_in_pub(self._port_key, data)
                     if data:
                         self.send(data)
                     else:
@@ -43,6 +49,8 @@ class TcpClientHander(Handler, threading.Thread):
                         logging.exception(ex)
                         continue
                 if not self._thread_stop:
+                    self._sock_host, self._sock_port = None, 0
+                    self._peer_host, self._peer_port = None, 0
                     time.sleep(3)
             except Exception as ex:
                 logging.exception(ex)
@@ -50,8 +58,12 @@ class TcpClientHander(Handler, threading.Thread):
 
     def peer_dict(self):
         return {
-            'local_host': self._host,
-            'local_port': self._port,
+            'target_host': self._host,
+            'target_port': self._port,
+            'sock_host': self._sock_host,
+            'sock_port': self._sock_port,
+            'peer_host': self._peer_host,
+            'peer_port': self._peer_port,
             'peer_recv_count': self._peer_recv_count,
             'peer_send_count': self._peer_send_count
         }
@@ -60,7 +72,7 @@ class TcpClientHander(Handler, threading.Thread):
         if self._socket:
             sent_size = self._socket.send(data)
             self._peer_send_count += sent_size
-            self._stream_pub.socket_out_pub(data[0:sent_size])
+            self._stream_pub.socket_out_pub(self._port_key, data[0:sent_size])
         else:
             logging.warning("Socket is not connected!")
 
