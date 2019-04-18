@@ -171,7 +171,8 @@ class VSPCManager(threading.Thread):
 
     def run(self):
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(self)), ctypes.c_void_p)
-        ret = vspc.FtVspcApiInit(g_vspc_event_cb, cUserdata, None)
+        key = """"""
+        ret = vspc.FtVspcApiInit(g_vspc_event_cb, cUserdata, key)
         logging.debug("FtVspcApiInit: {0}".format(ret))
 
         if not ret:

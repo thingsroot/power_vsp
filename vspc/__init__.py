@@ -116,7 +116,7 @@ class FT_VSPC_APP(Structure):
 
 class FTVSPC_INFO(Structure):
     _fields_ = [
-        ("unVspcInfoSize", c_uint * 32),
+        ("unVspcInfoSize", c_uint),
         ("cVersion", c_char * 32),
         ("LicenseType", c_int),
         ("unNumberOfLicenses", c_uint),
@@ -124,7 +124,6 @@ class FTVSPC_INFO(Structure):
         ("unPortTrialTime", c_uint),
         ("cLicensedUser", c_char * 255),
         ("cLicensedCompany", c_char * 255),
-        ("cLicenseKey", c_char * 255)
         ("cExpirationDate", c_char * 64)
     ]
 

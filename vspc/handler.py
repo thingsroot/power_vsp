@@ -103,7 +103,7 @@ class Handler:
 
             if data:
                 if self._stream_pub:
-                    self.__recv_count += len(data)
+                    self._recv_count += len(data)
                     self._stream_pub.vspc_out_pub(self._port_key, data)
                 self.on_recv(data)
 
@@ -234,7 +234,7 @@ class Handler:
     def send(self, data):
         ret = FtVspcWrite(self._handle, data)
         if ret:
-            self.__recv_count += len(data)
+            self._recv_count += len(data)
         if ret and self._stream_pub:
             self._stream_pub.vspc_out_pub(self._port_key, data)
         return ret
