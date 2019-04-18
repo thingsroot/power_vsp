@@ -177,7 +177,8 @@ class VSPCManager(threading.Thread):
         if not ret:
             logging.fatal("Failed to Initialize VSPC Library")
             return
-
+        ret = vspc.FtVspcGetInfo()
+        logging.debug("FtVspcGetInfo: {0}".format(ret))
         # self.add_by_num(4, Handler(name))
 
         while not self._thread_stop:

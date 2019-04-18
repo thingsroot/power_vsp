@@ -152,7 +152,7 @@ def FtVspcApiClose():
 
 
 def FtVspcApiInit(event_cb_func, context, license_key):
-    license_key = license_key and create_string_buffer(license_key) or None
+    license_key = license_key and create_string_buffer(license_key.encode('utf-8')) or None
     ret = api.FtVspcApiInitA(event_cb_func, context, license_key)
     if ret == 0:
         print_api_error()
@@ -160,7 +160,7 @@ def FtVspcApiInit(event_cb_func, context, license_key):
 
 
 def FtVspcApplyKey(license_key):
-    ret = api.FtVspcApplyKeyA(create_string_buffer(license_key))
+    ret = api.FtVspcApplyKeyA(create_string_buffer(license_key.encode('utf-8')))
     if ret == 0:
         print_api_error()
     return ret != 0
