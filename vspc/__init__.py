@@ -244,7 +244,7 @@ def FtVspcGetVirtualNum(index):
 
 
 def FtVspcCreatePort(port_name):
-    ret = api.FtVspcCreatePortA(create_string_buffer(port_name))
+    ret = api.FtVspcCreatePortA(create_string_buffer(port_name.encode('utf-8')))
     if ret == 0:
         print_api_error()
     return ret != 0
@@ -319,7 +319,7 @@ def FtVspcCreateTwinPortByNum(num, real_alias):
 
 
 def FtVspcRemovePort(port_name):
-    ret = api.FtVspcRemovePortA(create_string_buffer(port_name))
+    ret = api.FtVspcRemovePortA(create_string_buffer(port_name.encode('utf-8')))
     if ret == 0:
         print_api_error()
     return ret != 0
@@ -333,7 +333,7 @@ def FtVspcRemovePortByNum(port_num):
 
 
 def FtVspcAttach(port_name, event_cb, context):
-    ret = api.FtVspcAttachA(create_string_buffer(port_name),
+    ret = api.FtVspcAttachA(create_string_buffer(port_name.encode('utf-8')),
                             event_cb,
                             context)
     if ret == 0:
@@ -358,7 +358,7 @@ def FtVspcDetach(port_handle):
 
 def FtVspcGetPermanent(name):
     permanent = c_uint(0)
-    ret = api.FtVspcGetPermanentA(create_string_buffer(name), pointer(permanent))
+    ret = api.FtVspcGetPermanentA(create_string_buffer(name.encode('utf-8')), pointer(permanent))
     if ret == 0:
         print_api_error()
         return None
@@ -376,7 +376,7 @@ def FtVspcGetPermanentByNum(num):
 
 def FtVspcGetPortType(name):
     permanent = c_uint(0)
-    ret = api.FtVspcGetPortTypeA(create_string_buffer(name), pointer(permanent))
+    ret = api.FtVspcGetPortTypeA(create_string_buffer(name.encode('utf-8')), pointer(permanent))
     if ret == 0:
         print_api_error()
         return None
@@ -394,7 +394,7 @@ def FtVspcGetPortTypeByNum(num):
 
 def FtVspcGetQueryOpen(name):
     result = c_uint(0)
-    ret = api.FtVspcGetQueryOpenA(create_string_buffer(name), pointer(result))
+    ret = api.FtVspcGetQueryOpenA(create_string_buffer(name.encode('utf-8')), pointer(result))
     if ret == 0:
         print_api_error()
         return None
@@ -414,7 +414,7 @@ def FtVspcSetPermanent(name, permanent):
     c_per = c_uint(0)
     if permanent is True:
         c_per = c_uint(1)
-    ret = api.FtVspcSetPermanentA(create_string_buffer(name), c_per)
+    ret = api.FtVspcSetPermanentA(create_string_buffer(name.encode('utf-8')), c_per)
     if ret == 0:
         print_api_error()
     return ret != 0
@@ -434,7 +434,7 @@ def FtVspcSetQueryOpen(name, query_open):
     c_open = c_uint(0)
     if query_open is True:
         c_open = c_uint(1)
-    ret = api.FtVspcSetQueryOpenA(create_string_buffer(name), c_open)
+    ret = api.FtVspcSetQueryOpenA(create_string_buffer(name.encode('utf-8')), c_open)
     if ret == 0:
         print_api_error()
     return ret != 0
