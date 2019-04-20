@@ -1,5 +1,6 @@
 hbmqtt
 flask
+flask_cors
 flask-mqtt
 llama-mqtt
 ConfigParser
