@@ -66,6 +66,7 @@ class TcpClientHander(Handler, threading.Thread):
 
     def peer_dict(self):
         return {
+            'peer_state': self._peer_state,
             'target_host': self._host,
             'target_port': self._port,
             'sock_host': self._sock_host,
