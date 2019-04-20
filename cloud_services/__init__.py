@@ -48,7 +48,7 @@ class BaseService(threading.Thread):
 
         for action in receive():
             action_type = action["type"]
-            payload = _dict(action.get("payload"))
+            payload = _dict(action.get("payload")) or _dict({})
             ag = match_routes.match(action_type)
             if ag:
                 ag = ag.groups()
@@ -62,16 +62,15 @@ class BaseService(threading.Thread):
                 id = payload.get("id") or uuid.uuid1()
                 try:
                     self.is_whitelisted(api_method)
-                    if not payload:
-                        logging.error("Json deocde failure!!")
-                        dispatch(self.failure(route_key, "JSON Deoce Failure!"))
-                    else:
-                        dispatch(getattr(self, api_method)(id, payload))
+                    dispatch(getattr(self, api_method)(id, payload))
                 except Exception as ex:
                     logging.exception(ex)
                     dispatch(self.failure(route_key, id, repr(ex)))
             else:
-                dispatch(self.failure(route_key, uuid.uuid1(), "Topic api missing"))
+                try:
+                    logging.error(action)
+                except Exception as ex:
+                    logging.exception(ex)
 
     def is_whitelisted(self, method):
         fn = getattr(self, method, None)
