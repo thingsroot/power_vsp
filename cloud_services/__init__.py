@@ -81,8 +81,9 @@ class BaseService(threading.Thread):
         return True
 
     def failure(self, route_key, id, error_msg):
-        assert (route_key and self._routes[route_key])
-        assert (id and error_msg)
+        assert (route_key is not None and self._routes[route_key])
+        assert (id is not None)
+        assert (error_msg is not None)
         return {
             "type": "@{0}/RESULT".format(route_key),
             "payload": {
@@ -93,8 +94,9 @@ class BaseService(threading.Thread):
         }
 
     def success(self, route_key, id, data):
-        assert (route_key and self._routes[route_key])
-        assert (id and data)
+        assert (route_key is not None and self._routes[route_key])
+        assert (id is not None)
+        assert (data is not None)
         return {
             "type": "@{0}/RESULT".format(route_key),
             "payload": {
