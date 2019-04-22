@@ -110,7 +110,7 @@ class Handler:
             if data:
                 if self._stream_pub:
                     self._recv_count += len(data)
-                    self._stream_pub.vspc_out_pub(self._port_key, data)
+                    self._stream_pub.vspc_in_pub(self._port_key, data)
                 self.on_recv(data)
 
         if event == ftvspcPortEventDtr:

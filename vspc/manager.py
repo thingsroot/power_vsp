@@ -107,14 +107,14 @@ class VSPCManager(threading.Thread):
 
         if not ret:
             logging.error("Failed to detach {0}, reason: {1}".format(name, vspc.GetLastErrorMessage()))
-            return False
+            # return False
         else:
             logging.info("Removed port {0}".format(name))
 
         ret = vspc.FtVspcRemovePort(name)
         if not ret:
             logging.error("Failed to remove port {0}, reason: {1}".format(name, vspc.GetLastErrorMessage()))
-            return False
+            # return False
         else:
             logging.info("Removed port {0}".format(name))
 
