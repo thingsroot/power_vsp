@@ -131,14 +131,14 @@ class VSPCManager(threading.Thread):
 
         if not ret:
             logging.error("Failed to detach port by num {0}, reason: {1}".format(num, vspc.GetLastErrorMessage()))
-            return False
+            # return False # Remove handler even we meet detaching error
         else:
             logging.info("Detach port by num {0}".format(num))
 
         ret = vspc.FtVspcRemovePortByNum(num)
         if not ret:
             logging.error("Failed to remove port by num {0}, reason: {1}".format(num, vspc.GetLastErrorMessage()))
-            return False
+            # return False # Remove handler even we meet removal error
         else:
             logging.info("Removed port by num {0}".format(num))
 
