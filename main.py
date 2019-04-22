@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 # from services_runner import Services_Runner
 from hbmqtt_broker import MQTTBroker
 from mqtt_stream_pub import MQTTStreamPub
@@ -16,6 +17,10 @@ if __name__ == '__main__':
     # runner = Services_Runner(bin_x86_path, bin_x86_path + "mosquitto.exe")
     # logging.info("Staring service runner..")
     # runner.start()
+    logging.info("当前工作路径：" + str(os.getcwd()))
+    if sys.argv[0] != os.path.split(os.path.realpath(__file__))[1]:
+        os.chdir(os.path.split(sys.argv[0])[0])
+
     broker = MQTTBroker(broker_config)
     logging.info("Staring hbmqtt broker..")
     broker.start()
