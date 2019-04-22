@@ -362,7 +362,7 @@ def FtVspcGetPermanent(name):
     if ret == 0:
         print_api_error()
         return None
-    return permanent.value != 0
+    return permanent.value
 
 
 def FtVspcGetPermanentByNum(num):
@@ -371,25 +371,25 @@ def FtVspcGetPermanentByNum(num):
     if ret == 0:
         print_api_error()
         return None
-    return permanent.value != 0
+    return permanent.value
 
 
 def FtVspcGetPortType(name):
-    permanent = c_uint(0)
-    ret = api.FtVspcGetPortTypeA(create_string_buffer(name.encode('utf-8')), pointer(permanent))
+    result = c_uint(0)
+    ret = api.FtVspcGetPortTypeA(create_string_buffer(name.encode('utf-8')), pointer(result))
     if ret == 0:
         print_api_error()
         return None
-    return permanent.value != 0
+    return result.value
 
 
 def FtVspcGetPortTypeByNum(num):
-    permanent = c_uint(0)
-    ret = api.FtVspcGetPortTypeByNum(num, pointer(permanent))
+    result = c_uint(0)
+    ret = api.FtVspcGetPortTypeByNum(num, pointer(result))
     if ret == 0:
         print_api_error()
         return None
-    return permanent != 0
+    return result
 
 
 def FtVspcGetQueryOpen(name):
@@ -398,7 +398,7 @@ def FtVspcGetQueryOpen(name):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetQueryOpenByNum(num):
@@ -407,7 +407,7 @@ def FtVspcGetQueryOpenByNum(num):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcSetPermanent(name, permanent):
@@ -475,7 +475,7 @@ def FtVspcGetBitrateEmulation(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetBreak(port_handle):
@@ -484,7 +484,7 @@ def FtVspcGetBreak(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetCts(port_handle):
@@ -493,7 +493,7 @@ def FtVspcGetCts(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetDcd(port_handle):
@@ -502,7 +502,7 @@ def FtVspcGetDcd(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetDsr(port_handle):
@@ -511,7 +511,7 @@ def FtVspcGetDsr(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetFraming(port_handle):
@@ -520,7 +520,7 @@ def FtVspcGetFraming(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetInQueueBytes(port_handle):
@@ -538,7 +538,7 @@ def FtVspcGetOverrun(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetParity(port_handle):
@@ -547,7 +547,7 @@ def FtVspcGetParity(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result.value != 0
+    return result.value
 
 
 def FtVspcGetRing(port_handle):
@@ -556,7 +556,7 @@ def FtVspcGetRing(port_handle):
     if ret == 0:
         print_api_error()
         return None
-    return result != 0
+    return result.value
 
 
 def FtVspcSetBitrateEmulation(port_handle, b_val):
