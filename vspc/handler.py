@@ -47,6 +47,7 @@ class Handler:
 
     def set_handle(self, handle):
         self._handle = handle
+        self.fetch_port_status()
 
     def get_handle(self):
         return self._handle
@@ -236,6 +237,27 @@ class Handler:
             logging.debug("Application has set UseErrorChar to:", ul_value)
 
         return None
+
+    def fetch_port_status(self):
+        if type(self._port_key) == 'string':
+            self._attributes['GetPermanent'] = FtVspcGetPermanent(self._port_key)
+            self._attributes['PortType'] = FtVspcGetPortType(self._port_key)
+        else:
+            self._attributes['GetPermanent'] = FtVspcGetPermanentByNum(self._port_key)
+            self._attributes['PortType'] = FtVspcGetPortTypeByNum(self._port_key)
+        # self._attributes[PortEventNames[event]] = FtVspcGetBitrateEmulation(self._handle)
+        self._attributes[PortEventNames[ftvspcPortEventBreak]] = FtVspcGetBreak(self._handle)
+        # self._attributes[PortEventNames[event]] = FtVspcGetCts(self._handle)
+        # self._attributes[PortEventNames[event]] = FtVspcGetDcd(self._handle)
+        # self._attributes[PortEventNames[event]] = FtVspcGetDsr(self._handle)
+        # self._attributes[PortEventNames[event]] = FtVspcGetFraming(self._handle)
+        # self._attributes[PortEventNames[event]] = FtVspcGetInQueueBytes(self._handle)
+        # self._attributes[PortEventNames[event]] = FtVspcGetOverrun(self._handle)
+        self._attributes[PortEventNames[ftvspcPortEventParity]] = FtVspcGetParity(self._handle)
+        # self._attributes[PortEventNames[event]] = FtVspcGetRing(self._handle)
+
+        self._attributes[PortEventNames[ftvspcPortEventDataBits]] = ftvspcDataBits8
+        self._attributes[PortEventNames[ftvspcPortEventStopBits]] = ftvspcStopBitsOne
 
     def send(self, data):
         ret = FtVspcWrite(self._handle, data)
