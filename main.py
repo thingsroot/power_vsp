@@ -7,7 +7,7 @@ from vspc.manager import VSPCManager
 from cloud_services.vspc_service import VSPC_Service
 from admin import start_admin
 from vspc_conf import broker_config
-
+import encodings.idna
 
 if __name__ == '__main__':
     formatter = "[%(asctime)s] :: %(levelname)s :: %(name)s :: %(message)s"
