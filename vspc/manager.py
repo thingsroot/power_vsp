@@ -5,7 +5,6 @@ import ctypes
 import time
 import json
 
-
 def vspc_event_cb(event, ul_value, context):
     manager = ctypes.cast(context, ctypes.POINTER(ctypes.py_object)).contents.value
     manager.on_event(event, ul_value)
@@ -174,6 +173,11 @@ class VSPCManager(threading.Thread):
     def run(self):
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(self)), ctypes.c_void_p)
         key = """"""
+        try:
+            import license
+            key = license.key
+        except Exception as ex:
+            logging.warning("Failed to loading license key!!")
         ret = vspc.FtVspcApiInit(g_vspc_event_cb, cUserdata, key)
         logging.debug("FtVspcApiInit: {0}".format(ret))
 
