@@ -5,18 +5,20 @@ import ctypes
 import time
 import json
 
+
 def vspc_event_cb(event, ul_value, context):
     manager = ctypes.cast(context, ctypes.POINTER(ctypes.py_object)).contents.value
     manager.on_event(event, ul_value)
+    return None
 
 
 def vspc_port_event_cb(event, ul_value, context):
-    handler = ctypes.cast(context,ctypes. POINTER(ctypes.py_object)).contents.value
-    handler.on_event(event, ul_value)
-
-
-g_vspc_event_cb = vspc.EventCB(vspc_event_cb)
-g_vspc_port_event_cb = vspc.EventCB(vspc_port_event_cb)
+    handler = ctypes.cast(context, ctypes.POINTER(ctypes.py_object)).contents.value
+    r = handler.on_event(event, ul_value)
+    if r is not None:
+        return ctypes.c_void_p(r)
+    else:
+        return ctypes.c_void_p(0)
 
 
 class VSPCManager(threading.Thread):
@@ -25,6 +27,9 @@ class VSPCManager(threading.Thread):
         self._handlers = []
         self._thread_stop = False
         self._mqtt_stream_pub = stream_pub
+
+        self._vspc_event_cb = vspc.EventCB(vspc_event_cb)
+        self._vspc_port_event_cb = vspc.EventCB(vspc_port_event_cb)
 
     def list(self):
         return [handler.as_dict() for handler in self._handlers]
@@ -49,7 +54,7 @@ class VSPCManager(threading.Thread):
 
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
         handler.set_user_data(cUserdata)
-        handle = vspc.FtVspcAttach(name, g_vspc_port_event_cb, cUserdata)
+        handle = vspc.FtVspcAttach(name, self._vspc_port_event_cb, cUserdata)
 
         if not ret:
             logging.error("Failed to attach port {0}, reason: {1}".format(name, vspc.GetLastErrorMessage()))
@@ -78,7 +83,7 @@ class VSPCManager(threading.Thread):
 
         cUserdata = ctypes.cast(ctypes.pointer(ctypes.py_object(handler)), ctypes.c_void_p)
         handler.set_user_data(cUserdata)
-        handle = vspc.FtVspcAttachByNum(num, g_vspc_port_event_cb, cUserdata)
+        handle = vspc.FtVspcAttachByNum(num, self._vspc_port_event_cb, cUserdata)
 
         if not ret:
             logging.error("Failed to attach port by num {0}, reason: {1}".format(num, vspc.GetLastErrorMessage()))
@@ -178,8 +183,9 @@ class VSPCManager(threading.Thread):
             key = license.key
         except Exception as ex:
             logging.warning("Failed to loading license key!!")
-        ret = vspc.FtVspcApiInit(g_vspc_event_cb, cUserdata, key)
+        ret = vspc.FtVspcApiInit(self._vspc_event_cb, cUserdata, key)
         logging.debug("FtVspcApiInit: {0}".format(ret))
+        self._cUserdata = cUserdata
 
         if not ret:
             logging.fatal("Failed to Initialize VSPC Library")

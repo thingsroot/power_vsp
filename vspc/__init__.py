@@ -1,6 +1,5 @@
 import logging
 from ctypes import *
-from ctypes.wintypes import *
 
 api = CDLL("ftvspc.dll")
 
@@ -108,7 +107,7 @@ PortEventCB = WINFUNCTYPE(c_void_p, c_int, c_void_p, c_void_p)
 
 class FT_VSPC_APP(Structure):
     _fields_ = [
-        ("dwPid", c_ulong),
+        ("dwPid", c_uint32),
         ("cAppPath", c_char * 260),
         ("wcAppPath", c_char * 260)
     ]
@@ -138,11 +137,11 @@ class FT_VSPC_PORT(Structure):
 
 class COMMTIMEOUTS(Structure):
     _fields_ = [
-        ("ReadIntervalTimeout", c_ulong),
-        ("ReadTotalTimeoutMultiplier", c_ulong),
-        ("ReadTotalTimeoutConstant", c_ulong),
-        ("WriteTotalTimeoutMultiplier", c_ulong),
-        ("WriteTotalTimeoutConstant", c_ulong)
+        ("ReadIntervalTimeout", c_uint32),
+        ("ReadTotalTimeoutMultiplier", c_uint32),
+        ("ReadTotalTimeoutConstant", c_uint32),
+        ("WriteTotalTimeoutMultiplier", c_uint32),
+        ("WriteTotalTimeoutConstant", c_uint32)
     ]
 
 
