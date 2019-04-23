@@ -1,11 +1,11 @@
 import logging
 import os
 import sys
-# from services_runner import Services_Runner
 from hbmqtt_broker import MQTTBroker
 from vspc.mqtt_pub import MQTTStreamPub
 from vspc.manager import VSPCManager
 from vspc.service import VSPC_Service
+from vspc.admin import vspc_admin
 from admin import start_admin
 
 if __name__ == '__main__':
@@ -36,5 +36,5 @@ if __name__ == '__main__':
     vspc_service.start()
 
     logging.info("Staring Admin!!")
-    start_admin(vspc_manager, vspc_service)
+    start_admin([vspc_admin], {"vspc_service": vspc_service})
     logging.info("CLOSING!!")
