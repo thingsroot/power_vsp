@@ -3,12 +3,10 @@ import os
 import sys
 # from services_runner import Services_Runner
 from hbmqtt_broker import MQTTBroker
-from mqtt_stream_pub import MQTTStreamPub
+from vspc.mqtt_pub import MQTTStreamPub
 from vspc.manager import VSPCManager
-from cloud_services.vspc_service import VSPC_Service
+from vspc.service import VSPC_Service
 from admin import start_admin
-from vspc_conf import broker_config
-import encodings.idna
 
 if __name__ == '__main__':
     formatter = "[%(asctime)s] :: %(levelname)s :: %(name)s :: %(message)s"
@@ -21,7 +19,7 @@ if __name__ == '__main__':
     if sys.argv[0] != os.path.split(os.path.realpath(__file__))[1]:
         os.chdir(os.path.split(sys.argv[0])[0])
 
-    broker = MQTTBroker(broker_config)
+    broker = MQTTBroker()
     logging.info("Staring hbmqtt broker..")
     broker.start()
 

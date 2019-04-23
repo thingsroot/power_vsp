@@ -3,7 +3,7 @@ import logging
 import os
 import base64
 import paho.mqtt.client as mqtt
-from vspc_conf import MQTT_PROT
+from hbmqtt_broker.conf import MQTT_PROT
 
 
 # The callback for when the client receives a CONNACK response from the server.
