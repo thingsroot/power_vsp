@@ -2,23 +2,24 @@ import threading
 import logging
 import vspc
 import ctypes
+import ctypes.wintypes
 import time
 import json
+import os
 
 
 def vspc_event_cb(event, ul_value, context):
     manager = ctypes.cast(context, ctypes.POINTER(ctypes.py_object)).contents.value
     manager.on_event(event, ul_value)
-    return None
 
 
 def vspc_port_event_cb(event, ul_value, context):
     handler = ctypes.cast(context, ctypes.POINTER(ctypes.py_object)).contents.value
     r = handler.on_event(event, ul_value)
     if r is not None:
-        return ctypes.c_void_p(r)
+        return r
     else:
-        return ctypes.c_void_p(0)
+        return 0
 
 
 class VSPCManager(threading.Thread):
@@ -29,7 +30,7 @@ class VSPCManager(threading.Thread):
         self._mqtt_stream_pub = stream_pub
 
         self._vspc_event_cb = vspc.EventCB(vspc_event_cb)
-        self._vspc_port_event_cb = vspc.EventCB(vspc_port_event_cb)
+        self._vspc_port_event_cb = vspc.PortEventCB(vspc_port_event_cb)
 
     def list(self):
         return [handler.as_dict() for handler in self._handlers]
@@ -188,7 +189,8 @@ class VSPCManager(threading.Thread):
         self._cUserdata = cUserdata
 
         if not ret:
-            logging.fatal("Failed to Initialize VSPC Library")
+            logging.fatal("Failed to Initialize VSPC Library: {0}".format(vspc.GetLastErrorMessage()))
+            os.exit(0)
             return
         ret = vspc.FtVspcGetInfo()
         logging.debug("FtVspcGetInfo: {0}".format(ret))
@@ -198,8 +200,11 @@ class VSPCManager(threading.Thread):
             time.sleep(1)
 
             for handler in self._handlers:
-                info = json.dumps(handler.as_dict())
-                self._mqtt_stream_pub.vspc_status(handler.get_port_key(), info)
+                try:
+                    info = json.dumps(handler.as_dict())
+                    self._mqtt_stream_pub.vspc_status(handler.get_port_key(), info)
+                except Exception as ex:
+                    logging.exception(ex)
 
         vspc.FtVspcApiClose()
         logging.warning("Close VSPC Library!!!")

@@ -1,5 +1,6 @@
 import logging
 from ctypes import *
+from ctypes.wintypes import *
 
 api = CDLL("ftvspc.dll")
 
@@ -99,10 +100,10 @@ PortEventNames = [
 (ftvspcPortTypeSingle, ftvspcPortTypeOverlapped, ftvspcPortTypeTwin) = (0, 1, 2)
 
 # VSPC Event, ulValue, Context
-EventCB = WINFUNCTYPE(None, c_int, c_void_p, c_void_p)
+EventCB = CFUNCTYPE(None, c_int, WPARAM, LPARAM)
 
 # VSPC Port Event, ulValue, Context
-PortEventCB = WINFUNCTYPE(c_void_p, c_int, c_void_p, c_void_p)
+PortEventCB = CFUNCTYPE(LPARAM, c_int, WPARAM, LPARAM)
 
 
 class FT_VSPC_APP(Structure):
