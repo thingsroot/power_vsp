@@ -1,12 +1,17 @@
 import logging
 import os
 import sys
+import importlib
 from hbmqtt_broker import MQTTBroker
-from vspc.mqtt_pub import MQTTStreamPub
-from vspc.manager import VSPCManager
-from vspc.service import VSPC_Service
-from vspc.admin import vspc_admin
 from admin import start_admin
+from helper import _dict
+
+serivces = [
+    'vspc'
+]
+
+blueprints = []
+context = _dict({})
 
 if __name__ == '__main__':
     formatter = "[%(asctime)s] :: %(levelname)s :: %(name)s :: %(message)s"
@@ -23,18 +28,13 @@ if __name__ == '__main__':
     logging.info("Staring hbmqtt broker..")
     broker.start()
 
-    vspc_stream_pub = MQTTStreamPub()
-    logging.info("Staring mqtt stream publisher..")
-    vspc_stream_pub.start()
-
-    vspc_manager = VSPCManager(vspc_stream_pub)
-    logging.info("Staring vspc manager..")
-    vspc_manager.start()
-
-    vspc_service = VSPC_Service(vspc_manager)
-    logging.info("Staring vspc service..")
-    vspc_service.start()
+    for m in serivces:
+        service_module = importlib.import_module('{0}.app'.format(m))
+        blueprint, service = service_module.init()
+        blueprints.append(blueprint)
+        service_name = "{0}_service".format(m)
+        context[service_name] = service
 
     logging.info("Staring Admin!!")
-    start_admin([vspc_admin], {"vspc_service": vspc_service})
+    start_admin(blueprints, context)
     logging.info("CLOSING!!")
