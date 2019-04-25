@@ -6,3 +6,4 @@ llama-mqtt
 ConfigParser
 pypiwin32
 wmi
+requests

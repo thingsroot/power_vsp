@@ -67,9 +67,9 @@ class VSPC_Service(BaseService):
             raise NotFound("peer_not_found")
         handler = None
         if peer.get("type") == "tcp_client":
-            handler = TcpClientHander(peer.get("host"), peer.get("port"))
+            handler = TcpClientHander(peer.get("host"), peer.get("port"), peer.get("info"))
         if peer.get("type") == "tcp_server":
-            handler = TcpServerHandler(peer.get("host"), peer.get("port"))
+            handler = TcpServerHandler(peer.get("host"), peer.get("port"), peer.get("info"))
 
         if params.get("by_name") == 1:
             ret = self._manager.add(port_name, handler)

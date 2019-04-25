@@ -7,12 +7,13 @@ from vspc.handler import Handler
 
 
 class TcpServerHandler(Handler, threading.Thread):
-    def __init__(self, host, port):
+    def __init__(self, host, port, info):
         self._clients = []
         self._servers = []
         self._manager = None
         self._host = host
         self._port = port
+        self._info = info
         self._sock_host = None
         self._sock_port = 0
         self._peer_host = None
@@ -112,12 +113,15 @@ class TcpServerHandler(Handler, threading.Thread):
 
     def peer_dict(self):
         return {
-            'local_host': self._host,
-            'local_port': self._port,
+            'type': 'tcp_server',
+            'host': self._host,
+            'port': self._port,
+            'info': self._info,
             'sock_host': self._sock_host,
             'sock_port': self._sock_port,
             'peer_host': self._peer_host,
             'peer_port': self._peer_port,
+            'peer_state': self._peer_state,
             'peer_recv_count': self._peer_recv_count,
             'peer_send_count': self._peer_send_count
         }
