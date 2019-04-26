@@ -62,9 +62,9 @@ class MQTTStreamPubBase(threading.Thread):
         logging.info("MQTT (%s) %s message recevied topic %s", self.service_name, self.host, msg.topic)
 
     def publish(self, topic, payload, qos=1):
-        topic = "/v1/{0}/{1}".format(self.service_name, topic)
+        topic = "v1/{0}/{1}".format(self.service_name, topic)
         return self.mqttc.publish(topic=topic, payload=payload, qos=qos)
 
     def subscribe(self, topic):
-        topic = "/v1/{0}/{1}".format(self.service_name, topic)
+        topic = "v1/{0}/{1}".format(self.service_name, topic)
         return self.mqttc.subscribe(topic)
