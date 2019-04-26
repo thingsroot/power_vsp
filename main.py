@@ -7,6 +7,7 @@ from admin import start_admin
 from helper import _dict
 
 serivces = [
+    'vspc',
     'vnet'
 ]
 
