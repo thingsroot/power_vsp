@@ -6,6 +6,7 @@ from hbmqtt_broker import MQTTBroker
 from admin import start_admin
 from helper import _dict
 from configparser import ConfigParser
+import idna
 from logging.handlers import TimedRotatingFileHandler
 from logging.handlers import RotatingFileHandler
 
@@ -28,21 +29,29 @@ if __name__ == '__main__':
     if sys.argv[0] != os.path.split(os.path.realpath(__file__))[1]:
         os.chdir(os.path.split(sys.argv[0])[0])
 
-    if not os.path.exists("log"):
-        os.mkdir("log")
     log_level = 'INFO'
     log_filenum = 9
     log_maxsize = 4
     config = ConfigParser()
-    config.read('config.ini')
-    if config.get('log', 'level'):
-        log_level = config.get('log', 'level')
-    if config.get('log', 'filenum'):
-        log_filenum = int(config.get('log', 'filenum'))
-    if config.get('log', 'maxsize'):
-        log_maxsize = int(config.get('log', 'maxsize'))
+    if os.access(os.getcwd() + '\\config.ini', os.F_OK):
+        config.read('config.ini')
+        if config.get('log', 'level'):
+            log_level = config.get('log', 'level')
+        if config.get('log', 'filenum'):
+            log_filenum = int(config.get('log', 'filenum'))
+        if config.get('log', 'maxsize'):
+            log_maxsize = int(config.get('log', 'maxsize'))
+    else:
+        config.read('config.ini')
+        config.add_section("log")
+        config.set("log", 'level', 'INFO')
+        config.set("log", 'filenum', '9')
+        config.set("log", 'maxsize', '4')
+        config.write(open('config.ini', 'w'))
     level = logging.getLevelName(log_level)
     logging.basicConfig(level=level, format=formatter)
+    if not os.path.exists("log"):
+        os.mkdir("log")
 
     log = logging.getLogger()
     # 输出到文件
