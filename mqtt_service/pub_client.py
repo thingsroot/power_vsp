@@ -2,6 +2,7 @@ import threading
 import logging
 import os
 import base64
+import time
 import paho.mqtt.client as mqtt
 from hbmqtt_broker.conf import MQTT_PROT
 
@@ -50,6 +51,7 @@ class MQTTStreamPubBase(threading.Thread):
             mqttc.loop_forever(retry_first_connection=True)
         except Exception as ex:
             logging.exception(ex)
+            time.sleep(1)
             os._exit(1)
 
     def on_connect(self, client, flags, rc):
