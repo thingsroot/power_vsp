@@ -185,7 +185,7 @@ class VSPCManager(threading.Thread):
         except Exception as ex:
             logging.warning("Failed to loading license key!!")
         ret = vspc.FtVspcApiInit(self._vspc_event_cb, cUserdata, key)
-        logging.debug("FtVspcApiInit: {0}".format(ret))
+        logging.info("FtVspcApiInit: {0}".format(ret))
         self._cUserdata = cUserdata
 
         if not ret:
@@ -193,7 +193,7 @@ class VSPCManager(threading.Thread):
             os.exit(0)
             return
         ret = vspc.FtVspcGetInfo()
-        logging.debug("FtVspcGetInfo: {0}".format(ret))
+        logging.info("FtVspcGetInfo: {0}".format(ret))
         # self.add_by_num(4, Handler(name))
 
         while not self._thread_stop:

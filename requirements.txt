@@ -7,3 +7,5 @@ ConfigParser
 pypiwin32
 wmi
 requests
+pyinstaller
+ConfigParser

@@ -10,15 +10,15 @@ from vnet.admin import vnet_admin
 
 def init():
     stream_pub = MQTTStreamPub()
-    logging.info("Staring mqtt stream publisher..")
+    logging.info("Staring mqtt vnet publisher..")
     stream_pub.start()
 
     manager = VNETManager(stream_pub)
-    logging.info("Staring vspc manager..")
+    logging.info("Staring vnet manager..")
     manager.start()
 
     service = VNET_Service(manager)
-    logging.info("Staring vspc service..")
+    logging.info("Staring vnet service..")
     service.start()
 
     return vnet_admin, service

@@ -104,8 +104,11 @@ class VNETManager(threading.Thread):
             if "XP" in platform.platform():
                 pass
             else:
-                cmd2 = '"' + curpath + '\\vnet\\tinc\\tap-win\\tap-windows.exe' + '"' + ' /S'
-                cmd_ret = os.popen(cmd2)
+                if os.access(curpath + '\\vnet\\tinc\\tap-win\\tap-windows.exe', os.F_OK):
+                    cmd2 = '"' + curpath + '\\vnet\\tinc\\tap-win\\tap-windows.exe' + '"' + ' /S'
+                    cmd_ret = os.popen(cmd2)
+                else:
+                    logging.info('tap-windows.exe is nonexistent')
         # sleep(3)
         # _local_env = wmi_in_thread(check_local_env)
         # for k, v in _local_env.items():
@@ -120,6 +123,8 @@ class VNETManager(threading.Thread):
         if len(TAP_Nics) > 0:
             for tap_nic in TAP_Nics:
                 tap_nics.append(tap_nic.NetConnectionID)
+        else:
+            logging.info('NO TAP-Windows!')
         return tap_nics
 
     def prepend_tap(self, wmiService):
@@ -156,6 +161,8 @@ class VNETManager(threading.Thread):
                     sleep(1)
                     TAP_Windows_Nics[0].enable
                     destnic = TAP_Windows_Nics[0].GUID
+            else:
+                logging.info('NO TAP-Windows!')
             if destnic:
                 colNicConfigs = wmiService.Win32_NetworkAdapterConfiguration(
                     IPEnabled=False, ServiceName="tap0901", SettingID=destnic)
@@ -271,7 +278,7 @@ class VNETManager(threading.Thread):
             self._working_config['is_running'] = True
         else:
             self._result["services_start"] = False
-        # os.remove(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini')
+        os.remove(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini')
         return self._result
 
     def service_stop(self, vnettype):
@@ -313,6 +320,8 @@ class VNETManager(threading.Thread):
                     if pr['name'] == proxy_key:
                         proxy = pr
                         break
+            else:
+                logging.info('local_proxy is not running!')
         return proxy
 
     def cloud_proxy_status(self, url=None, auth=None):
@@ -334,6 +343,8 @@ class VNETManager(threading.Thread):
                     if pr['name'] == proxy_key:
                         proxy = pr
                         break
+            else:
+                logging.info('cloud_proxy is not running!')
         return proxy
 
     def Handle_route_table(self):
@@ -396,8 +407,11 @@ class VNETManager(threading.Thread):
             # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&", action_ret)
             if action_ret:
                 self._result["gate_mes"] = action_ret["message"]
+            else:
+                logging.info('gate has no response !')
             return self._result
         else:
+            logging.info('cloud has no response !')
             return False
 
     def check_ip_alive(self, dest_ip):
