@@ -2,7 +2,7 @@
 broker_config = {
     "listeners": {
         "default": {
-            "max-connections": 8,
+            "max-connections": 1024,
             "type": "tcp"
         },
         "my-tcp-1": {
