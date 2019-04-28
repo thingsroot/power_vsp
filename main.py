@@ -73,6 +73,7 @@ if __name__ == '__main__':
         blueprints.append(blueprint)
         service_name = "{0}_service".format(m)
         context[service_name] = service
+        time.sleep(0.5)
 
     logging.info("Staring Admin!!")
     start_admin(blueprints, context)
