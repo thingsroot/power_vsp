@@ -32,27 +32,29 @@ class MQTTStreamPubBase(threading.Thread):
         self.clientid = "STREAM_PUB." + service_name
         self.keepalive = 60
         self.service_name = service_name
+        self._close_connection = False
 
     def stop(self):
+        self._close_connection = True
         self.mqttc.disconnect()
 
     def run(self):
-        try:
-            mqttc = mqtt.Client(userdata=self, client_id=self.clientid)
-            self.mqttc = mqttc
+        while not self._close_connection:
+            try:
+                mqttc = mqtt.Client(userdata=self, client_id=self.clientid)
+                self.mqttc = mqttc
 
-            mqttc.on_connect = on_connect
-            mqttc.on_disconnect = on_disconnect
-            mqttc.on_message = on_message
+                mqttc.on_connect = on_connect
+                mqttc.on_disconnect = on_disconnect
+                mqttc.on_message = on_message
 
-            logging.debug('MQTT (%s) Connect to %s:%d cid: %s', self.service_name, self.host, self.port, self.clientid)
-            mqttc.connect_async(self.host, self.port, self.keepalive)
+                logging.debug('MQTT (%s) Connect to %s:%d cid: %s', self.service_name, self.host, self.port, self.clientid)
+                mqttc.connect_async(self.host, self.port, self.keepalive)
 
-            mqttc.loop_forever(retry_first_connection=True)
-        except Exception as ex:
-            logging.exception(ex)
-            time.sleep(1)
-            os._exit(1)
+                mqttc.loop_forever(retry_first_connection=True)
+            except Exception as ex:
+                logging.exception(ex)
+                mqttc.disconnect()
 
     def on_connect(self, client, flags, rc):
         logging.info("MQTT (%s) %s connected return %d", self.service_name, self.host, rc)
