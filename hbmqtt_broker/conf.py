@@ -20,11 +20,11 @@ broker_config = {
     "plugins": [
         "auth_anonymous"
     ],
-    "topic-check" : {
+    "topic-check": {
         "enabled": True,
         "plugins": ["topic_taboo"]
     }
 }
 
-MQTT_PROT=7883
-MQTT_WS_PORT=7884
+MQTT_PROT = 7883
+MQTT_WS_PORT = 7884

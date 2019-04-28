@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 import importlib
 from hbmqtt_broker import MQTTBroker
 from admin import start_admin
@@ -64,6 +65,7 @@ if __name__ == '__main__':
     broker = MQTTBroker()
     logging.info("Staring hbmqtt broker..")
     broker.start()
+    time.sleep(1)
 
     for m in serivces:
         service_module = importlib.import_module('{0}.app'.format(m))

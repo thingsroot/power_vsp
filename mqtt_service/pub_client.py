@@ -28,7 +28,7 @@ class MQTTStreamPubBase(threading.Thread):
         threading.Thread.__init__(self)
         self.host = "localhost"
         self.port = MQTT_PROT
-        self.clientid = "STREAM_PUB"
+        self.clientid = "STREAM_PUB." + service_name
         self.keepalive = 60
         self.service_name = service_name
 
