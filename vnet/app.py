@@ -6,12 +6,14 @@ from vnet.mqtt_pub import MQTTStreamPub
 from vnet.manager import VNETManager
 from vnet.service import VNET_Service
 from vnet.admin import vnet_admin
+import time
 
 
 def init():
     stream_pub = MQTTStreamPub()
     logging.info("Staring mqtt vnet publisher..")
     stream_pub.start()
+    time.sleep(1)
 
     manager = VNETManager(stream_pub)
     logging.info("Staring vnet manager..")
