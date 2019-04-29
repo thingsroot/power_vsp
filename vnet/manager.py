@@ -10,6 +10,7 @@ import pythoncom
 import platform
 import configparser
 import requests
+from requests import get
 from requests.auth import HTTPBasicAuth
 from time import sleep
 from vnet.route_fix import VNETRouterFix
@@ -185,9 +186,12 @@ class VNETManager(threading.Thread):
         if not frps_cfg:
             frps_cfg = default_frpc
         else:
-            default_frpc['server_addr'] = frps_cfg['server_addr']
-            default_frpc['server_port'] = frps_cfg['server_port']
-            default_frpc['token'] = frps_cfg['token']
+            if frps_cfg['server_addr']:
+                default_frpc['server_addr'] = frps_cfg['server_addr']
+            if frps_cfg['server_port']:
+                default_frpc['server_port'] = frps_cfg['server_port']
+            if frps_cfg['token']:
+                default_frpc['token'] = frps_cfg['token']
             frps_cfg = default_frpc
         frps_cfg['protocol'] = self._working_config['vnet_cfg']['net_protocol']
         # print(frps_cfg)

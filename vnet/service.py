@@ -1,6 +1,6 @@
 import threading
 import logging
-import re
+import json
 import os
 from mqtt_service import *
 from hbmqtt_broker.conf import MQTT_PROT
@@ -30,7 +30,32 @@ class VNET_Service(BaseService):
     @whitelist.__func__
     def api_ping(self, id, params):
         # print("params:", params)
-        ret = self._manager.info('pong')
+        ret = 'pong'
+        if ret:
+            return self.success("api", id, ret)
+        else:
+            return self.failure("api", id, "no_found")
+
+    @whitelist.__func__
+    def api_version(self, id, params):
+        # print("params:", params)
+        version = None
+        with open("./vnet/version.json", 'r') as load_f:
+            version = json.load(load_f)
+        if version:
+            return self.success("api", id, version)
+        else:
+            return self.failure("api", id, "no_version")
+
+    @whitelist.__func__
+    def api_update(self, id, params):
+        # print("params:", params)
+        confirm = params.info('confirm')
+        if confirm:
+            update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/download/freeioe_Rprogramming.zip"
+            save_file = "freeioe_Rprogramming.zip"
+            action_ret = self._manager.update(update_url, save_file)
+        ret = 'pong'
         if ret:
             return self.success("api", id, ret)
         else:
