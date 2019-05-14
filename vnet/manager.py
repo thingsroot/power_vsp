@@ -10,10 +10,11 @@ import pythoncom
 import platform
 import configparser
 import requests
-from requests import get
+import hashlib
 from requests.auth import HTTPBasicAuth
 from time import sleep
 from vnet.route_fix import VNETRouterFix
+from vnet.file_download import VNETdownload
 
 default_frpc = {
     "admin_addr": "127.0.0.1",
@@ -25,6 +26,18 @@ default_frpc = {
     "protocol": "kcp"
 }
 
+def GetFileMd5(filename):
+    if not os.path.isfile(filename):
+        return None
+    myHash = hashlib.md5()
+    f = open(filename, 'rb')
+    while True:
+        b = f.read(8096)
+        if not b:
+            break
+        myHash.update(b)
+    f.close()
+    return myHash.hexdigest()
 
 class VNETManager(threading.Thread):
     def __init__(self, stream_pub):
@@ -37,6 +50,7 @@ class VNETManager(threading.Thread):
         self._thread_stop = False
         self._mqtt_stream_pub = stream_pub
         self._route_fix = None
+        self._download = None
 
     def wmi_in_thread(self, myfunc, *args, **kwargs):
         pythoncom.CoInitialize()
@@ -430,12 +444,48 @@ class VNETManager(threading.Thread):
                 self.Handle_route_table()
             return {'message': 'offline'}
 
+    def check_version(self):
+        new_version = None
+        new_version_md5 =None
+        new_version_url = 'https://thingscloud.oss-cn-beijing.aliyuncs.com/download/Vnet/version.json'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
+        version = None
+        with open("./version.json", 'r') as load_f:
+            version = json.load(load_f)['version']
+        response = requests.get(new_version_url, headers=headers)
+        if response:
+            ret = json.loads(response.content.decode("utf-8"))
+            new_version = ret['version']
+            new_version_md5 = ret['md5']
+        if int(new_version) > int(version):
+            return {"new_version": new_version, "version": version, "update": True}
+        else:
+            return {"new_version": new_version, "new_version_md5": new_version_md5, "version": version, "update": False}
+
+    def on_update(self, update_url, save_file):
+        if not self._download.is_download():
+            self._download.start_download(update_url, save_file)
+        return {"status": "upgrading"}
+
+    def check_update_status(self):
+        if self._download.is_download():
+            return {"status": "upgrading"}
+        else:
+            filemd5 = GetFileMd5('./_update/freeioe_Rprogramming.zip')
+            if filemd5:
+                return {"status": "done", "md5": filemd5}
+            else:
+                return {"status": "failed", "md5": None}
+
     def on_event(self, event, ul_value):
         return True
 
     def start(self):
         self._route_fix = VNETRouterFix(self)
         self._route_fix.start()
+        self._download = VNETdownload(self)
+        self._download.start()
         threading.Thread.start(self)
 
     def run(self):
@@ -481,6 +531,7 @@ class VNETManager(threading.Thread):
 
     def stop(self):
         self._route_fix.stop()
+        self._download.stop()
         self._thread_stop = True
         self.join()
 

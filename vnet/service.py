@@ -39,27 +39,33 @@ class VNET_Service(BaseService):
     @whitelist.__func__
     def api_version(self, id, params):
         # print("params:", params)
-        version = None
-        with open("./vnet/version.json", 'r') as load_f:
-            version = json.load(load_f)
-        if version:
-            return self.success("api", id, version)
+        ret = self._manager.check_version()
+        if ret:
+            return self.success("api", id, ret)
         else:
             return self.failure("api", id, "no_version")
 
     @whitelist.__func__
     def api_update(self, id, params):
         # print("params:", params)
-        confirm = params.info('confirm')
-        if confirm:
+        update_confirm = params.get('update_confirm')
+        print(update_confirm)
+        if update_confirm:
             update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/download/freeioe_Rprogramming.zip"
-            save_file = "freeioe_Rprogramming.zip"
-            action_ret = self._manager.update(update_url, save_file)
-        ret = 'pong'
+            save_file = "./_update/freeioe_Rprogramming.zip"
+            action_ret = self._manager.on_update(update_url, save_file)
+            return self.success("api", id, action_ret)
+        else:
+            return self.failure("api", id, "no")
+
+    @whitelist.__func__
+    def api_update_status(self, id, params):
+        # print("params:", params)
+        ret = self._manager.check_update_status()
         if ret:
             return self.success("api", id, ret)
         else:
-            return self.failure("api", id, "no_found")
+            return self.failure("api", id, "no")
 
     @whitelist.__func__
     def api_checkenv(self, id, params):
