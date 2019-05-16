@@ -47,11 +47,12 @@ class UPDATEManager(threading.Thread):
             ret = json.loads(response.content.decode("utf-8"))
             new_version = ret['version']
             new_version_md5 = ret['md5']
+            new_version_filename = ret['filename']
             self._new_version_md5 = new_version_md5
         if int(new_version) > int(version):
             return {"new_version": new_version, "version": version, "update": True}
         else:
-            return {"new_version": new_version, "new_version_md5": new_version_md5, "version": version, "update": False}
+            return {"new_version": new_version, "new_version_md5": new_version_md5, "new_version_filename": new_version_filename, "version": version, "update": False}
 
     def on_update(self, update_url, save_file):
         if not self._download.is_download():
