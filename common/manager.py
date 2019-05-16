@@ -67,10 +67,12 @@ class UPDATEManager(threading.Thread):
             if filemd5 and self._new_version_md5 == filemd5:
                 curpath = os.getcwd()
                 workdir = curpath
-                cmd1 = curpath + '\\_update\\_update.exe'
+                cmd1 = '..\\_update\\update_service.exe install'
                 from helper.process_runner import Process_Runner
                 runner = Process_Runner(workdir, cmd1)
                 runner.run()
+                cmd1 = 'sc start freeioe_Rprogramming_update_service |find /I "STATE"'
+                cmd_ret = os.popen(cmd1).read().strip()
                 return {"status": "done", "md5": filemd5}
             else:
                 return {"status": "failed", "md5": None}
