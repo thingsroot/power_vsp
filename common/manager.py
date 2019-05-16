@@ -62,7 +62,7 @@ class UPDATEManager(threading.Thread):
         if self._download.is_download():
             return {"status": "upgrading"}
         else:
-            filemd5 = GetFileMd5('./_update/freeioe_Rprogramming.zip')
+            filemd5 = GetFileMd5('./_update/freeioe_Rprogramming_lastest.zip')
             if filemd5 and self._new_version_md5 == filemd5:
                 curpath = os.getcwd()
                 workdir = curpath

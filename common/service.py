@@ -51,9 +51,10 @@ class UPDATE_Service(BaseService):
     def api_update(self, id, params):
         # print("params:", params)
         update_confirm = params.get('update_confirm')
+        new_version = params.get('new_version')
         if update_confirm:
-            update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/download/freeioe_Rprogramming.zip"
-            save_file = "./_update/freeioe_Rprogramming.zip"
+            update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/download/freeioe_Rprogramming_" + new_version + ".zip"
+            save_file = "./_update/freeioe_Rprogramming_lastest.zip"
             action_ret = self._manager.on_update(update_url, save_file)
             return self.success("api", id, action_ret)
         else:
