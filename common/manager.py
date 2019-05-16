@@ -64,6 +64,12 @@ class UPDATEManager(threading.Thread):
         else:
             filemd5 = GetFileMd5('./_update/freeioe_Rprogramming.zip')
             if filemd5 and self._new_version_md5 == filemd5:
+                curpath = os.getcwd()
+                workdir = curpath
+                cmd1 = curpath + '\\_update\\_update.exe'
+                from helper.process_runner import Process_Runner
+                runner = Process_Runner(workdir, cmd1)
+                runner.run()
                 return {"status": "done", "md5": filemd5}
             else:
                 return {"status": "failed", "md5": None}
