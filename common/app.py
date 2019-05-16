@@ -2,10 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 import logging
-from update.mqtt_pub import MQTTStreamPub
-from update.manager import UPDATEManager
-from update.service import UPDATE_Service
-from update.admin import update_admin
+from common.mqtt_pub import MQTTStreamPub
+from common.manager import UPDATEManager
+from common.service import UPDATE_Service
+from common.admin import update_admin
 import time
 
 

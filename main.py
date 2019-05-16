@@ -14,7 +14,7 @@ from logging.handlers import RotatingFileHandler
 serivces = [
     'vspc',
     'vnet',
-    'update'
+    'common'
 ]
 
 blueprints = []

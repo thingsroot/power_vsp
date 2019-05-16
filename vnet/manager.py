@@ -14,7 +14,7 @@ import hashlib
 from requests.auth import HTTPBasicAuth
 from time import sleep
 from vnet.route_fix import VNETRouterFix
-# from vnet.file_download import VNETdownload
+from ping3 import ping
 
 default_frpc = {
     "admin_addr": "127.0.0.1",
@@ -49,8 +49,11 @@ class VNETManager(threading.Thread):
         self._timeout = 5
         self._thread_stop = False
         self._mqtt_stream_pub = stream_pub
+        self._enable_heartbeat = True
+        self._heartbeat_timeout = time.time() + 90
         self._route_fix = None
         self._download = None
+        self._AuthorizationCode = None
 
     def wmi_in_thread(self, myfunc, *args, **kwargs):
         pythoncom.CoInitialize()
@@ -200,11 +203,11 @@ class VNETManager(threading.Thread):
         if not frps_cfg:
             frps_cfg = default_frpc
         else:
-            if frps_cfg['server_addr']:
+            if frps_cfg.get('server_addr'):
                 default_frpc['server_addr'] = frps_cfg['server_addr']
-            if frps_cfg['server_port']:
+            if frps_cfg.get('server_port'):
                 default_frpc['server_port'] = frps_cfg['server_port']
-            if frps_cfg['token']:
+            if frps_cfg.get('token'):
                 default_frpc['token'] = frps_cfg['token']
             frps_cfg = default_frpc
         frps_cfg['protocol'] = self._working_config['vnet_cfg']['net_protocol']
@@ -290,13 +293,14 @@ class VNETManager(threading.Thread):
             # print('sc resut:', cmd_ret)
             sleep(0.1)
             if cmd_ret:
+                logging.info(s + ' is starting!')
                 services_start = services_start + 1
         if services_start == len(dest_services):
             self._result["services_start"] = True
             self._working_config['is_running'] = True
         else:
             self._result["services_start"] = False
-        os.remove(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini')
+        # os.remove(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini')
         return self._result
 
     def service_stop(self, vnettype):
@@ -310,6 +314,7 @@ class VNETManager(threading.Thread):
             # print('sc resut:', cmd_ret)
             sleep(0.1)
             if cmd_ret:
+                logging.info(s + ' is stopping!')
                 services_start = services_start + 1
         if services_start == len(dest_services):
             self._result["services_stop"] = True
@@ -329,9 +334,13 @@ class VNETManager(threading.Thread):
             url = 'http://127.0.0.1:7413/api/status'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
-            response = requests.get(url, headers=headers)
-            ret_content = json.loads(response.content.decode("utf-8"))
-            proxies = ret_content['tcp']
+            proxies = {}
+            try:
+                response = requests.get(url, headers=headers)
+                ret_content = json.loads(response.content.decode("utf-8"))
+                proxies = ret_content['tcp']
+            except Exception as ex:
+                logging.error('local_proxy_status :: ' + str(ex))
             if self._working_config.get('is_running'):
                 proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
                 for pr in proxies:
@@ -339,22 +348,26 @@ class VNETManager(threading.Thread):
                         proxy = pr
                         break
             else:
-                logging.info('local_proxy is not running!')
+                logging.info('services is not running!')
         return proxy
 
     def cloud_proxy_status(self, url=None, auth=None):
         proxy = None
         if self._working_config.get('is_running'):
             if not url:
-                url = 'http://thingsroot.com:2699/api/proxy/tcp'
+                url = 'http://' + self._working_config["vnet_cfg"]["node"] + ':2699/api/proxy/tcp'
             if not auth:
                 auth = ('thingsrootadmin', 'Pa88word')
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
             }
-            response = requests.get(url, headers=headers, auth=HTTPBasicAuth(auth[0], auth[1]))
-            ret_content = json.loads(response.content.decode("utf-8"))
-            proxies = ret_content['proxies']
+            proxies = {}
+            try:
+                response = requests.get(url, headers=headers, auth=HTTPBasicAuth(auth[0], auth[1]))
+                ret_content = json.loads(response.content.decode("utf-8"))
+                proxies = ret_content['proxies']
+            except Exception as ex:
+                logging.error('cloud_proxy_status :: ' + str(ex))
             if self._working_config.get('is_running'):
                 proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
                 for pr in proxies:
@@ -362,7 +375,7 @@ class VNETManager(threading.Thread):
                         proxy = pr
                         break
             else:
-                logging.info('cloud_proxy is not running!')
+                logging.info('services is not running!')
         return proxy
 
     def Handle_route_table(self):
@@ -395,10 +408,10 @@ class VNETManager(threading.Thread):
 
     def post_to_cloud(self, auth_code, output, peer_host, peer_port):
         gate_sn = self._working_config['vnet_cfg']["gate_sn"]
-        rand_id = gate_sn + '/send_output/' + str(time.time())
+        rand_id = gate_sn + '/send_output/' + output + '/' + str(time.time())
         net_mode = self._working_config['vnet_cfg']["net_mode"]
         url = 'http://ioe.thingsroot.com'
-        AuthorizationCode = auth_code
+        self._AuthorizationCode = auth_code
         vnet_config = {"net": net_mode, "Address": peer_host, "Port": peer_port}
         datas = {
             "id": rand_id,
@@ -410,7 +423,7 @@ class VNETManager(threading.Thread):
                 "prop": "value"
             }
         }
-        send_ret = self.action_send_output(url, AuthorizationCode, datas)
+        send_ret = self.action_send_output(url, self._AuthorizationCode, datas)
         # print("***********************", send_ret)
         if send_ret:
             action_ret = None
@@ -418,7 +431,7 @@ class VNETManager(threading.Thread):
             if send_ret['message'] == rand_id:
                 for i in range(4):
                     action_ret = self.get_action_result(
-                        url,  AuthorizationCode, rand_id)
+                        url,  self._AuthorizationCode, rand_id)
                     if action_ret:
                         break
                     sleep(i + 1)
@@ -433,50 +446,37 @@ class VNETManager(threading.Thread):
             return False
 
     def check_ip_alive(self, dest_ip):
-        cmd4 = 'FOR /F "tokens=1 delims=:" %A IN ' + "('ping " + dest_ip + " -n 1 ^| " + 'findstr /N "TTL"' + "') DO @echo %A"
-        cmd4_ret = os.popen(cmd4).read().strip()
-        if cmd4_ret:
-            if int(cmd4_ret) > 0:
-                return {'message': 'online'}
+        ret = ping(dest_ip, unit='ms', timeout=2)
+        if ret:
+            return {'message': 'online', "delay": str(int(ret)) + 'ms'}
         else:
             if self._working_config["vnet_cfg"]["net_mode"] == 'router':
                 # print(self._working_config["vnet_cfg"]["net_mode"])
                 self.Handle_route_table()
-            return {'message': 'offline'}
+            return {'message': 'offline', "delay": 'timeout'}
 
-    # def check_version(self):
-    #     new_version = None
-    #     new_version_md5 =None
-    #     new_version_url = 'https://thingscloud.oss-cn-beijing.aliyuncs.com/download/Vnet/version.json'
-    #     headers = {
-    #         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
-    #     version = None
-    #     with open("./version.json", 'r') as load_f:
-    #         version = json.load(load_f)['version']
-    #     response = requests.get(new_version_url, headers=headers)
-    #     if response:
-    #         ret = json.loads(response.content.decode("utf-8"))
-    #         new_version = ret['version']
-    #         new_version_md5 = ret['md5']
-    #     if int(new_version) > int(version):
-    #         return {"new_version": new_version, "version": version, "update": True}
-    #     else:
-    #         return {"new_version": new_version, "new_version_md5": new_version_md5, "version": version, "update": False}
-    #
-    # def on_update(self, update_url, save_file):
-    #     if not self._download.is_download():
-    #         self._download.start_download(update_url, save_file)
-    #     return {"status": "upgrading"}
-    #
-    # def check_update_status(self):
-    #     if self._download.is_download():
-    #         return {"status": "upgrading"}
-    #     else:
-    #         filemd5 = GetFileMd5('./_update/freeioe_Rprogramming.zip')
-    #         if filemd5:
-    #             return {"status": "done", "md5": filemd5}
-    #         else:
-    #             return {"status": "failed", "md5": None}
+    def enable_heartbeat(self, flag, timeout,  auth_code, gate_sn):
+        self._enable_heartbeat = flag
+        self._heartbeat_timeout = timeout + time.time()
+        self.keep_vnet_alive(auth_code, gate_sn)
+        return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
+
+    def keep_vnet_alive(self,  auth_code, gate_sn):
+        if gate_sn and auth_code:
+            rand_id = gate_sn + '/send_output/heartbeat_timeout/' + str(time.time())
+            url = 'http://ioe.thingsroot.com'
+            datas = {
+                "id": rand_id,
+                "device": gate_sn,
+                "data": {
+                    "device": gate_sn + ".freeioe_Vnet",
+                    "output": 'heartbeat_timeout',
+                    "value": 60,
+                    "prop": "value"
+                }
+            }
+            ret = self.action_send_output(url, auth_code, datas)
+
 
     def on_event(self, event, ul_value):
         return True
@@ -507,14 +507,14 @@ class VNETManager(threading.Thread):
                 if local_proxy_status:
                     self._mqtt_stream_pub.proxy_status('LOCAL_PROXY', json.dumps(local_proxy_status))
                 else:
-                    self._mqtt_stream_pub.proxy_status('LOCAL_PROXY', json.dumps({"error": "nothing"}))
+                    self._mqtt_stream_pub.proxy_status('LOCAL_PROXY', json.dumps({"status": "error"}))
 
                 if span == self._timeout:
                     cloud_proxy_status = self.cloud_proxy_status()
                     if cloud_proxy_status:
                         self._mqtt_stream_pub.proxy_status('CLOUD_PROXY', json.dumps(cloud_proxy_status))
                     else:
-                        self._mqtt_stream_pub.proxy_status('CLOUD_PROXY', json.dumps({"error": "nothing"}))
+                        self._mqtt_stream_pub.proxy_status('CLOUD_PROXY', json.dumps({"status": "error"}))
 
                     span = span - 1
                 elif span == 0:
@@ -522,9 +522,11 @@ class VNETManager(threading.Thread):
                 else:
                     span = span - 1
 
-            for handler in self._handlers:
-                info = json.dumps(handler.as_dict())
-                self._mqtt_stream_pub.vnet_status(handler.get_port_key(), info)
+            if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
+                    self.clean_all()
+            else:
+                # print(time.time() - self._heartbeat_timeout)
+                pass
 
         logging.warning("Close VNET!")
 
@@ -533,3 +535,16 @@ class VNETManager(threading.Thread):
         # self._download.stop()
         self._thread_stop = True
         self.join()
+
+    def clean_all(self):
+        dest_services = ["frpc_Vnet_service", "tinc.tofreeioebridge", "tinc.tofreeioerouter"]
+        services_start = 0
+        for s in dest_services:
+            cmd1 = 'sc stop ' + s + '|find /I "STATE"'
+            cmd_ret = os.popen(cmd1).read().strip()
+            # print('sc resut:', cmd_ret)
+            sleep(0.1)
+            if cmd_ret:
+                logging.info(s + ' is stopping!')
+                services_start = services_start + 1
+        pass

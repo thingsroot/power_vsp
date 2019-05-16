@@ -19,10 +19,10 @@ class Handler:
         self._peer_state = 'INITIALIZED'
 
     def start(self):
-        pass
+        self._stream_pub.vspc_notify(self._port_key, 'ADD', {"name": self._port_num, "num": self._port_name})
 
     def stop(self):
-        pass
+        self._stream_pub.vspc_notify(self._port_key, 'REMOVE', {"name": self._port_num, "num": self._port_name})
 
     def is_port(self, name):
         return self._port_key == name or str(self._port_key) == name

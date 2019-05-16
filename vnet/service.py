@@ -36,37 +36,6 @@ class VNET_Service(BaseService):
         else:
             return self.failure("api", id, "no_found")
 
-    # @whitelist.__func__
-    # def api_version(self, id, params):
-    #     # print("params:", params)
-    #     ret = self._manager.check_version()
-    #     if ret:
-    #         return self.success("api", id, ret)
-    #     else:
-    #         return self.failure("api", id, "no_version")
-    #
-    # @whitelist.__func__
-    # def api_update(self, id, params):
-    #     # print("params:", params)
-    #     update_confirm = params.get('update_confirm')
-    #     print(update_confirm)
-    #     if update_confirm:
-    #         update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/download/freeioe_Rprogramming.zip"
-    #         save_file = "./_update/freeioe_Rprogramming.zip"
-    #         action_ret = self._manager.on_update(update_url, save_file)
-    #         return self.success("api", id, action_ret)
-    #     else:
-    #         return self.failure("api", id, "no")
-    #
-    # @whitelist.__func__
-    # def api_update_status(self, id, params):
-    #     # print("params:", params)
-    #     ret = self._manager.check_update_status()
-    #     if ret:
-    #         return self.success("api", id, ret)
-    #     else:
-    #         return self.failure("api", id, "no")
-
     @whitelist.__func__
     def api_checkenv(self, id, params):
         # print("params:", params)
@@ -193,6 +162,18 @@ class VNET_Service(BaseService):
     def api_cloud_proxy_status(self, id, params):
         # print("params:", params)
         ret = self._manager.cloud_proxy_status()
+        if ret:
+            return self.success("api", id, ret)
+        else:
+            return self.failure("api", id, "error")
+
+    @whitelist.__func__
+    def api_keep_alive(self, id, params):
+        _enable_heartbeat = params.enable_heartbeat
+        _heartbeat_timeout = params.heartbeat_timeout
+        auth_code = params.get('auth_code')
+        gate_sn = params.get('gate_sn')
+        ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout, auth_code, gate_sn)
         if ret:
             return self.success("api", id, ret)
         else:

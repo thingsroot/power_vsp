@@ -28,7 +28,8 @@ class VSPCManager(threading.Thread):
         self._handlers = []
         self._thread_stop = False
         self._mqtt_stream_pub = stream_pub
-
+        self._enable_heartbeat = True
+        self._heartbeat_timeout = time.time() + 90
         self._vspc_event_cb = vspc.EventCB(vspc_event_cb)
         self._vspc_port_event_cb = vspc.PortEventCB(vspc_port_event_cb)
 
@@ -148,6 +149,7 @@ class VSPCManager(threading.Thread):
             logging.info("Removed port by num {0}".format(num))
 
         self._handlers.remove(handler)
+
         return True
 
     def info(self, name):
@@ -156,6 +158,11 @@ class VSPCManager(threading.Thread):
             logging.error("Failed to find port {0}!!".format(name))
             return False
         return handler.as_dict()
+
+    def enable_heartbeat(self, flag, timeout):
+        self._enable_heartbeat = flag
+        self._heartbeat_timeout = timeout + time.time()
+        return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
 
     def on_event(self, event, ul_value):
         port = None
@@ -205,6 +212,9 @@ class VSPCManager(threading.Thread):
                     self._mqtt_stream_pub.vspc_status(handler.get_port_key(), info)
                 except Exception as ex:
                     logging.exception(ex)
+            # print('timespan::::::::::::', time.time() - self._heartbeat_timeout)
+            if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
+                    self.clean_all()
 
         vspc.FtVspcApiClose()
         logging.warning("Close VSPC Library!!!")
@@ -213,3 +223,10 @@ class VSPCManager(threading.Thread):
         self._thread_stop = True
         self.join()
 
+    def clean_all(self):
+        keys = [h.get_port_key() for h in self._handlers]
+        for name in keys:
+            try:
+                self.remove(name)
+            except Exception as ex:
+                logging.exception(ex)

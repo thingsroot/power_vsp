@@ -30,6 +30,15 @@ class UPDATE_Service(BaseService):
             return self.failure("api", id, "no_found")
 
     @whitelist.__func__
+    def api_servers_list(self, id, params):
+        # print("params:", params)
+        ret = self._manager.check_servers_list()
+        if ret:
+            return self.success("api", id, ret)
+        else:
+            return self.failure("api", id, "no_servers")
+
+    @whitelist.__func__
     def api_version(self, id, params):
         # print("params:", params)
         ret = self._manager.check_version()

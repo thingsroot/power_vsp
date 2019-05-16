@@ -4,12 +4,12 @@ import re
 import time
 import json
 import os
-import platform
+from ping3 import ping
 import configparser
 import requests
 import hashlib
 from time import sleep
-from update.file_download import UPDATEdownload
+from common.file_download import UPDATEdownload
 
 
 def GetFileMd5(filename):
@@ -67,6 +67,19 @@ class UPDATEManager(threading.Thread):
                 return {"status": "done", "md5": filemd5}
             else:
                 return {"status": "failed", "md5": None}
+
+    def check_servers_list(self):
+        servers_list = None
+        result = []
+        with open("./servers_list.json", 'r') as load_f:
+            servers_list = json.load(load_f)
+        if servers_list:
+            for k, v in servers_list.items():
+                ret = ping(v, unit='ms', timeout=1)
+                if ret:
+                    result.append({"desc": k, "host": v, "delay": str(int(ret))+'ms'})
+                pass
+        return result
 
     def on_event(self, event, ul_value):
         return True

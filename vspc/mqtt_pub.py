@@ -1,6 +1,6 @@
 import threading
 import logging
-import os
+import json
 import base64
 from mqtt_service.pub_client import MQTTStreamPubBase
 
@@ -32,3 +32,7 @@ class MQTTStreamPub(MQTTStreamPubBase):
     def vspc_status(self, key, info):
         topic = "VSPC_STATUS/{0}".format(key)
         return self.publish(topic=topic, payload=info, qos=1)
+
+    def vspc_notify(self, key, type, info):
+        topic = "VSPC_NOTIFY/{0}".format(key)
+        return self.publish(topic=topic, payload=json.dumps({"type": type, "info": info}), qos=1)
