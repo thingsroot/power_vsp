@@ -36,7 +36,7 @@ class UPDATEManager(threading.Thread):
     def check_version(self):
         new_version = None
         new_version_md5 = None
-        new_version_url = 'https://thingscloud.oss-cn-beijing.aliyuncs.com/download/version.json'
+        new_version_url = 'https://thingscloud.oss-cn-beijing.aliyuncs.com/freeioe_Rprogramming/version.json'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
         version = None
@@ -72,17 +72,23 @@ class UPDATEManager(threading.Thread):
                 return {"status": "failed", "md5": None}
 
     def check_servers_list(self):
-        servers_list = None
         result = []
-        with open("./servers_list.json", 'r') as load_f:
-            servers_list = json.load(load_f)
-        if servers_list:
-            for k, v in servers_list.items():
+        servers_list_url = 'https://thingscloud.oss-cn-beijing.aliyuncs.com/freeioe_Rprogramming/servers_list.json'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
+        response = requests.get(servers_list_url, headers=headers)
+        if response:
+            ret = json.loads(response.content.decode("gb2312"))
+            # print(ret)
+            for k, v in ret.items():
                 ret = ping(v, unit='ms', timeout=1)
                 if ret:
-                    result.append({"desc": k, "host": v, "delay": str(int(ret))+'ms'})
+                    result.append({"desc": k, "host": v, "delay": str(int(ret)) + 'ms', "key": int(ret)})
+                else:
+                    result.append({"desc": k, "host": v, "delay": 'timeout', "key": 999})
                 pass
-        return result
+            result = sorted(result, key=lambda x: x['key'])
+            return result
 
     def on_event(self, event, ul_value):
         return True

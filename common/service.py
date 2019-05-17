@@ -54,9 +54,9 @@ class UPDATE_Service(BaseService):
         new_version = params.get('new_version')
         new_version_filename = params.get('new_version_filename')
         if update_confirm:
-            update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/download/freeioe_Rprogramming_" + new_version + ".zip"
+            update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/freeioe_Rprogramming/freeioe_Rprogramming_" + new_version + ".zip"
             if new_version_filename:
-                update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/download/" + new_version_filename
+                update_url = "http://thingscloud.oss-cn-beijing.aliyuncs.com/freeioe_Rprogramming/" + new_version_filename
             save_file = "./_update/freeioe_Rprogramming_lastest.zip"
             action_ret = self._manager.on_update(update_url, save_file)
             return self.success("api", id, action_ret)
