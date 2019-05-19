@@ -77,6 +77,7 @@ class UPDATEManager(threading.Thread):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
         response = requests.get(servers_list_url, headers=headers)
+        logging.debug("check_servers_list::" + (response.content.decode("gb2312")))
         if response:
             ret = json.loads(response.content.decode("gb2312"))
             # print(ret)
@@ -89,6 +90,8 @@ class UPDATEManager(threading.Thread):
                 pass
             result = sorted(result, key=lambda x: x['key'])
             return result
+        else:
+            logging.info("check_servers_list:: nothing")
 
     def on_event(self, event, ul_value):
         return True
