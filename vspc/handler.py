@@ -1,4 +1,5 @@
 import logging
+import time
 from vspc import *
 from helper import _dict
 
@@ -17,6 +18,9 @@ class Handler:
         self._attributes = {}
         self._stream_pub = None
         self._peer_state = 'INITIALIZED'
+
+        ### Internal usage
+        self._purge_rx_clear = False
 
     def start(self):
         self._stream_pub.vspc_notify(self._port_key, 'ADD', {"name": self._port_num, "num": self._port_name})
@@ -148,6 +152,24 @@ class Handler:
         if event == ftvspcPortEventPurge:
             logging.debug("Application has set PurgeComm to:", ul_value)
             self._attributes[PortEventNames[event]] = ul_value
+            # TODO: wait for a while clear receives
+            '''
+            PURGE_RXABORT
+            0x0002
+            Terminates all outstanding overlapped read operations and returns immediately, even if the read operations have not been completed.
+            PURGE_RXCLEAR
+            0x0008
+            Clears the input buffer (if the device driver has one).
+            PURGE_TXABORT
+            0x0001
+            Terminates all outstanding overlapped write operations and returns immediately, even if the write operations have not been completed.
+            PURGE_TXCLEAR
+            0x0004
+            '''
+            if (ul_value & 0x08) == 0x08:   # RX_CLEAR
+                self._purge_rx_clear = True
+                time.sleep(0.2)
+                self._purge_rx_clear = False
 
         if event == ftvspcPortEventXonLim:
             logging.debug("Application has set XonLim to:", ul_value)
@@ -238,6 +260,8 @@ class Handler:
         return 0
 
     def send(self, data):
+        if self._purge_rx_clear:
+            return len(data)    # Data skipped
         ret = FtVspcWrite(self._handle, data)
         if ret:
             self._send_count += len(data)
