@@ -57,6 +57,7 @@ class TcpServerHandler(Handler, threading.Thread):
                 if s is self._servers:
                     conn, client_addr = s.accept()
                     conn.setblocking(0)
+                    conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
                     if len(self._clients) > 0:
                         print('TODO:')
