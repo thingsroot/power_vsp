@@ -100,3 +100,13 @@ class VSPC_Service(BaseService):
             return self.success("api", id, ret)
         else:
             return self.failure("api", id, "port_no_found")
+
+    @whitelist.__func__
+    def api_keep_alive(self, id, params):
+        _enable_heartbeat = params.enable_heartbeat
+        _heartbeat_timeout = params.heartbeat_timeout
+        ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout)
+        if ret:
+            return self.success("api", id, ret)
+        else:
+            return self.failure("api", id, "error")

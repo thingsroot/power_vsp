@@ -1,6 +1,6 @@
 import threading
 import logging
-import re
+import json
 import os
 from mqtt_service import *
 from hbmqtt_broker.conf import MQTT_PROT
@@ -30,7 +30,7 @@ class VNET_Service(BaseService):
     @whitelist.__func__
     def api_ping(self, id, params):
         # print("params:", params)
-        ret = self._manager.info('pong')
+        ret = 'pong'
         if ret:
             return self.success("api", id, ret)
         else:
@@ -162,6 +162,18 @@ class VNET_Service(BaseService):
     def api_cloud_proxy_status(self, id, params):
         # print("params:", params)
         ret = self._manager.cloud_proxy_status()
+        if ret:
+            return self.success("api", id, ret)
+        else:
+            return self.failure("api", id, "error")
+
+    @whitelist.__func__
+    def api_keep_alive(self, id, params):
+        _enable_heartbeat = params.enable_heartbeat
+        _heartbeat_timeout = params.heartbeat_timeout
+        auth_code = params.get('auth_code')
+        gate_sn = params.get('gate_sn')
+        ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout, auth_code, gate_sn)
         if ret:
             return self.success("api", id, ret)
         else:
