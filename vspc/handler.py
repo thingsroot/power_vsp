@@ -235,7 +235,7 @@ class Handler:
             logging.debug("Application has set UseErrorChar to:", ul_value)
             self._attributes[PortEventNames[event]] = ul_value == 1
 
-        return None
+        return 0
 
     def send(self, data):
         ret = FtVspcWrite(self._handle, data)
