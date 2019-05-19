@@ -35,6 +35,7 @@ class TcpClientHander(Handler, threading.Thread):
                 self._peer_state = 'CONNECTING'
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 s.connect((self._host, self._port))
                 self._sock_host, self._sock_port = s.getsockname()
                 self._peer_host, self._peer_port = s.getpeername()
