@@ -33,6 +33,7 @@ class UPDATEManager(threading.Thread):
         self._download = None
         self._new_version_md5 = None
 
+    @property
     def check_version(self):
         new_version = None
         new_version_md5 = None
@@ -42,7 +43,11 @@ class UPDATEManager(threading.Thread):
         version = None
         with open("./version.json", 'r') as load_f:
             version = json.load(load_f)['version']
-        response = requests.get(new_version_url, headers=headers)
+        response = None
+        try:
+            response = requests.get(new_version_url, headers=headers)
+        except Exception as ex:
+            logging.exception(ex)
         if response:
             ret = json.loads(response.content.decode("utf-8"))
             new_version = ret['version']
@@ -76,10 +81,14 @@ class UPDATEManager(threading.Thread):
         servers_list_url = 'https://thingscloud.oss-cn-beijing.aliyuncs.com/freeioe_Rprogramming/servers_list.json'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
-        response = requests.get(servers_list_url, headers=headers)
-        logging.debug("check_servers_list::" + (response.content.decode("gb2312")))
+        response = None
+        try:
+            response = requests.get(servers_list_url, headers=headers)
+        except Exception as ex:
+            logging.exception(ex)
         if response:
             ret = json.loads(response.content.decode("gb2312"))
+            logging.info("servers_list::" + str(len(ret)))
             # print(ret)
             for k, v in ret.items():
                 ret = ping(v, unit='ms', timeout=1)
@@ -91,7 +100,7 @@ class UPDATEManager(threading.Thread):
             result = sorted(result, key=lambda x: x['key'])
             return result
         else:
-            logging.info("check_servers_list:: nothing")
+            logging.info("servers_list:: 0")
 
     def on_event(self, event, ul_value):
         return True

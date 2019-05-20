@@ -41,7 +41,7 @@ class UPDATE_Service(BaseService):
     @whitelist.__func__
     def api_version(self, id, params):
         # print("params:", params)
-        ret = self._manager.check_version()
+        ret = self._manager.check_version
         if ret:
             return self.success("api", id, ret)
         else:
