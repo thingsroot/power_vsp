@@ -1,9 +1,7 @@
 import threading
 import logging
-import os
-import base64
-import time
 import paho.mqtt.client as mqtt
+from queue import Queue
 from hbmqtt_broker.conf import MQTT_PROT
 
 
@@ -32,6 +30,7 @@ class MQTTStreamPubBase(threading.Thread):
         self.clientid = "STREAM_PUB." + service_name
         self.keepalive = 60
         self.service_name = service_name
+        self.pub_queue = Queue()
         self._close_connection = False
 
     def stop(self):
@@ -52,6 +51,15 @@ class MQTTStreamPubBase(threading.Thread):
                 mqttc.connect_async(self.host, self.port, self.keepalive)
 
                 mqttc.loop_forever(retry_first_connection=True)
+                while not self._close_connection:
+                    mqttc.loop(0.2)
+                    while not self._close_connection:
+                        try:
+                            d = self.pub_queue.get_nowait()
+                            self.publish_direct(d[0], d[1], d[2])
+                        except Exception as ex:
+                            logging.exception(ex)
+                    # continue
             except Exception as ex:
                 logging.exception(ex)
                 mqttc.disconnect()
@@ -66,6 +74,9 @@ class MQTTStreamPubBase(threading.Thread):
         logging.info("MQTT (%s) %s message recevied topic %s", self.service_name, self.host, msg.topic)
 
     def publish(self, topic, payload, qos=1):
+        self.pub_queue.put([topic, payload, qos])
+
+    def publish_direct(self, topic, payload, qos=1):
         topic = "v1/{0}/{1}".format(self.service_name, topic)
         return self.mqttc.publish(topic=topic, payload=payload, qos=qos)
 

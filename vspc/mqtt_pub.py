@@ -5,7 +5,7 @@ import base64
 from mqtt_service.pub_client import MQTTStreamPubBase
 
 
-class MQTTStreamPub(MQTTStreamPubBase):
+class MQTTStreamPub(MQTTStreamPubBase, threading.Thread):
     def __init__(self):
         MQTTStreamPubBase.__init__(self, "vspc")
 

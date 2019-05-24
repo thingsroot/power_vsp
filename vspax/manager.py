@@ -71,7 +71,7 @@ class VSPAXManager(threading.Thread):
                     logging.exception(ex)
             # print('timespan::::::::::::', time.time() - self._heartbeat_timeout)
             if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
-                    self.clean_all()
+                self.clean_all()
 
         logging.warning("Close VSPAX Library!!!")
 

@@ -3,7 +3,7 @@
 	"name": "COM8",
 	"peer":{
       "type": "tcp_client",
-      "host": "bj.proxy.thingsroot.com",
-      "port":29037
+      "host": "172.30.1.143",
+      "port":2003
   }
 }

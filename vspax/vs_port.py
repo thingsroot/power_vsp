@@ -156,7 +156,7 @@ class VSPort(VSPortEventHandler, threading.Thread):
         self._queue.put(data)
 
     def write_to_vsport(self, data):
-        logging.info("Serial Write: {0}".format(len(data)))
+        #logging.info("Serial Write: {0}".format(len(data)))
         ret = self._vsport.WriteArray(bytearray(data))
         if ret > 0:
             if ret != len(data):
@@ -170,7 +170,7 @@ class VSPort(VSPortEventHandler, threading.Thread):
         data = self._vsport.ReadArray(lCount)
         data = data.tobytes()
         if data:
-            logging.info("Serial Got: {0}".format(len(data)))
+            # logging.info("Serial Got: {0}".format(len(data)))
             if self._stream_pub:
                 self._recv_count += len(data)
                 self._stream_pub.vspax_in_pub(self._port_key, data)
@@ -191,6 +191,7 @@ class VSPort(VSPortEventHandler, threading.Thread):
                         self.write_to_vsport(data)
                 except Exception as ex:
                     logging.exception(ex)
+                    continue
         except Exception as ex:
             logging.exception(ex)
         self._peer.stop()

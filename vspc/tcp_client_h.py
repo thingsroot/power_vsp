@@ -43,10 +43,10 @@ class TcpClientHander(Handler, threading.Thread):
                 self._peer_state = 'CONNECTED'
                 self._socket = s
                 while not self._thread_stop:
-                    data = s.recv(1024)
+                    data = s.recv(16)
                     self._peer_recv_count += len(data)
                     self._stream_pub.socket_in_pub(self._port_key, data)
-                    if not data:
+                    if data is None:
                         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
                         break
                     self.send(data)
