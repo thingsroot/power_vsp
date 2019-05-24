@@ -48,18 +48,19 @@ class MQTTStreamPubBase(threading.Thread):
                 mqttc.on_message = on_message
 
                 logging.debug('MQTT (%s) Connect to %s:%d cid: %s', self.service_name, self.host, self.port, self.clientid)
-                mqttc.connect(self.host, self.port, self.keepalive)
-                #mqttc.connect_async(self.host, self.port, self.keepalive)
-                # mqttc.loop_forever(retry_first_connection=True)
-                while not self._close_connection:
-                    mqttc.loop(0.2)
-                    while not self._close_connection and not self.pub_queue.empty():
-                        try:
-                            d = self.pub_queue.get_nowait()
-                            self.publish_direct(d[0], d[1], d[2])
-                        except Exception as ex:
-                            logging.exception(ex)
-                    # continue
+                mqttc.connect_async(self.host, self.port, self.keepalive)
+                mqttc.loop_forever(retry_first_connection=True)
+                #
+                # mqttc.connect(self.host, self.port, self.keepalive)
+                # while not self._close_connection:
+                #     mqttc.loop(0.2)
+                #     while not self._close_connection and not self.pub_queue.empty():
+                #         try:
+                #             d = self.pub_queue.get_nowait()
+                #             self.publish_direct(d[0], d[1], d[2])
+                #         except Exception as ex:
+                #             logging.exception(ex)
+                #     # continue
             except Exception as ex:
                 logging.exception(ex)
                 mqttc.disconnect()
@@ -73,10 +74,12 @@ class MQTTStreamPubBase(threading.Thread):
     def on_message(self, client, msg):
         logging.info("MQTT (%s) %s message recevied topic %s", self.service_name, self.host, msg.topic)
 
-    def publish(self, topic, payload, qos=1):
-        self.pub_queue.put([topic, payload, qos])
+    # def publish(self, topic, payload, qos=1):
+    #     self.pub_queue.put([topic, payload, qos])
+    #
+    # def publish_direct(self, topic, payload, qos=1):
 
-    def publish_direct(self, topic, payload, qos=1):
+    def publish(self, topic, payload, qos=1):
         topic = "v1/{0}/{1}".format(self.service_name, topic)
         return self.mqttc.publish(topic=topic, payload=payload, qos=qos)
 
