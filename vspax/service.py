@@ -22,42 +22,13 @@ class VSPAX_Service(BaseService):
         BaseService.start(self)
 
     @whitelist.__func__
-    def api_list(self, id, params):
-        count = 0 #vspax.FtVspcEnumPhysical()
-        phy_ports = []
-        for i in range(0, count):
-            port_name = vspax.FtVspcGetPhysical(i)
-            if port_name:
-                phy_ports.append(port_name)
-        count = 0 #vspax.FtVspcEnumVirtual()
-        vir_ports = []
-        for i in range(0, count):
-            port_name, mark_for_deletion = vspax.FtVspcGetVirtual(i)
-            if port_name:
-                vir_ports.append(port_name)
-        return self.success("api", id, {
-            "phy": phy_ports,
-            "vir": vir_ports
-        })
-
-    @whitelist.__func__
-    def api_list_phy(self, id, params):
-        count = 0
-        ports = []
-        for i in range(0, count):
-            port_name = 'NAAAA'
-            if port_name:
-                ports.append(port_name)
-        return self.success("api", id, ports)
+    def api_reset_bus(self, id, params):
+        reset = self._manager.reset_bus()
+        return self.success("api", id, {"result": reset})
 
     @whitelist.__func__
     def api_list_vir(self, id, params):
-        count = 0
-        ports = []
-        for i in range(0, count):
-            port_name, mark_for_deletion = 'NAAAA',False
-            if port_name:
-                ports.append(port_name)
+        ports = self._manager.list_ports()
         return self.success("api", id, ports)
 
     @whitelist.__func__

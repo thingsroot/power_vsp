@@ -19,6 +19,9 @@ class VSPAXManager(threading.Thread):
     def list(self):
         return [handler.as_dict() for handler in self._ports]
 
+    def list_ports(self):
+        return [handler.get_port_key() for handler in self._ports]
+
     def get(self, name):
         for handler in self._ports:
             if handler.is_port(name):
@@ -55,11 +58,12 @@ class VSPAXManager(threading.Thread):
         self._heartbeat_timeout = timeout + time.time()
         return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
 
-    def run(self):
+    def reset_bus(self):
         pythoncom.CoInitialize()
         vsport = win32com.client.Dispatch(VSPort_ActiveX_ProgID)
-        vsport.ResetBus()
+        return vsport.ResetBus()
 
+    def run(self):
         while not self._thread_stop:
             time.sleep(1)
 
@@ -71,7 +75,7 @@ class VSPAXManager(threading.Thread):
                     logging.exception(ex)
             # print('timespan::::::::::::', time.time() - self._heartbeat_timeout)
             if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
-                self.clean_all()
+                pass #self.clean_all()
 
         logging.warning("Close VSPAX Library!!!")
 
