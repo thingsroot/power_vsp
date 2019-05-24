@@ -48,8 +48,8 @@ class MQTTStreamPubBase(threading.Thread):
                 mqttc.on_message = on_message
 
                 logging.debug('MQTT (%s) Connect to %s:%d cid: %s', self.service_name, self.host, self.port, self.clientid)
-                mqttc.connect_async(self.host, self.port, self.keepalive)
-
+                mqttc.connect(self.host, self.port, self.keepalive)
+                #mqttc.connect_async(self.host, self.port, self.keepalive)
                 # mqttc.loop_forever(retry_first_connection=True)
                 while not self._close_connection:
                     mqttc.loop(0.2)
