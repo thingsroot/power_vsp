@@ -50,10 +50,10 @@ class MQTTStreamPubBase(threading.Thread):
                 logging.debug('MQTT (%s) Connect to %s:%d cid: %s', self.service_name, self.host, self.port, self.clientid)
                 mqttc.connect_async(self.host, self.port, self.keepalive)
 
-                mqttc.loop_forever(retry_first_connection=True)
+                # mqttc.loop_forever(retry_first_connection=True)
                 while not self._close_connection:
                     mqttc.loop(0.2)
-                    while not self._close_connection:
+                    while not self._close_connection and not self.pub_queue.empty():
                         try:
                             d = self.pub_queue.get_nowait()
                             self.publish_direct(d[0], d[1], d[2])
