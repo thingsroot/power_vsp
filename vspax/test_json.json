@@ -1,0 +1,9 @@
+{
+	"id":"ABC",
+	"name": "COM8",
+	"peer":{
+      "type": "tcp_client",
+      "host": "bj.proxy.thingsroot.com",
+      "port":29037
+  }
+}

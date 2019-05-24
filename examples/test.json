@@ -1,0 +1,10 @@
+
+{
+	"id":"ABC",
+	"name": "COM8",
+	"peer":{
+      "type": "tcp_client",
+      "host": "127.0.0.1",
+      "port":29037
+  }
+}

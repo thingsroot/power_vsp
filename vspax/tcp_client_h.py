@@ -2,11 +2,9 @@ import logging
 import threading
 import socket
 import time
-from vspc.handler import Handler
 
-
-class TcpClientHander(Handler, threading.Thread):
-    def __init__(self, host, port, info):
+class TcpClientHander(threading.Thread):
+    def __init__(self, handler, host, port, info):
         self._host = host
         self._port = port
         self._info = info
@@ -17,17 +15,15 @@ class TcpClientHander(Handler, threading.Thread):
         self._thread_stop = False
         self._peer_send_count = 0
         self._peer_recv_count = 0
-        Handler.__init__(self)
+        self._vsport = handler
         threading.Thread.__init__(self)
 
     def start(self):
-        Handler.start(self)
         threading.Thread.start(self)
 
     def stop(self):
         self._thread_stop = True
         self.join(1)
-        Handler.stop(self)
 
     def run(self):
         while not self._thread_stop:
@@ -43,13 +39,14 @@ class TcpClientHander(Handler, threading.Thread):
                 self._peer_state = 'CONNECTED'
                 self._socket = s
                 while not self._thread_stop:
-                    data = s.recv(1024)
+                    data = s.recv(32)
                     self._peer_recv_count += len(data)
-                    self._stream_pub.socket_in_pub(self._port_key, data)
+                    self._vsport.socket_in_pub(data)
+                    logging.info("TCP Got: {0}".format(len(data)))
                     if not data:
                         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
                         break
-                    self.send(data)
+                    self._vsport.send(data)
                 ## closed
                 if self._socket:
                     self._peer_state = 'DISCONNECTED'
@@ -85,12 +82,12 @@ class TcpClientHander(Handler, threading.Thread):
     def clean_count(self):
         self._peer_send_count = 0
         self._peer_recv_count = 0
-        Handler.clean_count(self)
 
     def on_recv(self, data):
         if self._socket:
+            logging.info("TCP Send: {0}".format(len(data)))
             sent_size = self._socket.send(data)
             self._peer_send_count += sent_size
-            self._stream_pub.socket_out_pub(self._port_key, data[0:sent_size])
+            self._vsport.socket_out_pub(data[0:sent_size])
         else:
             logging.warning("Socket is not connected!")

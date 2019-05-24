@@ -81,6 +81,7 @@ class Handler:
         self._send_count = 0
 
     def on_event(self, event, ul_value):
+        ## logging.info("Port {0} event {1} ul_value: {2}".format(self._port_key, int(event), repr(ul_value)))
         if event == ftvspcPortEventOpen:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
             logging.debug("Port {0} opened.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
