@@ -28,6 +28,11 @@ class VSPAX_Service(BaseService):
 
     @whitelist.__func__
     def api_list_vir(self, id, params):
+        ports = self._manager.list_vir()
+        return self.success("api", id, ports)
+
+    @whitelist.__func__
+    def api_list_used(self, id, params):
         ports = self._manager.list_ports()
         return self.success("api", id, ports)
 
