@@ -14,7 +14,7 @@ from logging.handlers import RotatingFileHandler
 serivces = [
     'vspc',
     'vspax',
-    'vnet'
+    'vnet',
     'common'
 ]
 
