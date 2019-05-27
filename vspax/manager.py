@@ -15,12 +15,23 @@ class VSPAXManager(threading.Thread):
         self._mqtt_stream_pub = stream_pub
         self._enable_heartbeat = True
         self._heartbeat_timeout = time.time() + 90
+        self._vsport_ctrl = None
 
     def list(self):
         return [handler.as_dict() for handler in self._ports]
 
     def list_ports(self):
         return [handler.get_port_key() for handler in self._ports]
+
+    def list_vir(self):
+        if not self._vsport_ctrl:
+            pythoncom.CoInitialize()
+            self._vsport_ctrl = win32com.client.Dispatch(VSPort_ActiveX_ProgID)
+        ports = []
+        for i in range(0, self._vsport_ctrl.CountVirtualPort):
+            ports.append(self._vsport_ctrl.EnumVirtualPort(i))
+
+        return ports
 
     def get(self, name):
         for handler in self._ports:
@@ -59,9 +70,10 @@ class VSPAXManager(threading.Thread):
         return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
 
     def reset_bus(self):
-        pythoncom.CoInitialize()
-        vsport = win32com.client.Dispatch(VSPort_ActiveX_ProgID)
-        return vsport.ResetBus()
+        if not self._vsport_ctrl:
+            pythoncom.CoInitialize()
+            self._vsport_ctrl = win32com.client.Dispatch(VSPort_ActiveX_ProgID)
+        return self._vsport_ctrl.ResetBus()
 
     def run(self):
         while not self._thread_stop:
