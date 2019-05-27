@@ -99,7 +99,7 @@ class TcpClientHander(threading.Thread):
                         self._vsport.socket_in_pub(data)
                     else:
                         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
-                        raise RuntimeError("socket connection closed")
+                        return
 
             for s in exeptional:
                 logging.debug("handling exception for {0}".format(s.getpeername()))

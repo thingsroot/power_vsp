@@ -96,7 +96,7 @@ class TcpClientHander(Handler, threading.Thread):
                             self._stream_pub.socket_in_pub(self._port_key, data)
                     else:
                         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
-                        raise RuntimeError("socket connection broken")
+                        return
 
             for s in exeptional:
                 logging.debug("handling exception for {0}".format(s.getpeername()))
