@@ -88,7 +88,7 @@ class TcpClientHander(threading.Thread):
                 if s == self._socket:
                     data = s.recv(1024)
                     if data is not None:
-                        logging.info("TCP Got: {0}".format(len(data)))
+                        # logging.info("TCP Got: {0}".format(len(data)))
                         self._vsport.send(data)
                         self._peer_recv_count += len(data)
                         self._vsport.socket_in_pub(data)
@@ -122,7 +122,7 @@ class TcpClientHander(threading.Thread):
     def on_recv(self, data):
         if self._socket:
             sent_size = self._socket.send(data)
-            logging.info("TCP Send: {0} - {1}".format(len(data), sent_size))
+            # logging.info("TCP Send: {0} - {1}".format(len(data), sent_size))
             self._peer_send_count += sent_size
             if sent_size == len(data):
                 self._vsport.socket_out_pub(data)

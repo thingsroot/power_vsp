@@ -1,9 +1,7 @@
 import logging
-import time
 import threading
 import pythoncom
 import win32com.client
-import queue
 from vspax import *
 from helper import _dict
 
@@ -29,7 +27,6 @@ class VSPort(VSPortEventHandler, threading.Thread):
         self._send_count = 0
         self._stream_pub = None
         self._peer = None
-        self._queue = queue.Queue()
         self._thread_stop = False
         threading.Thread.__init__(self)
 
@@ -141,14 +138,14 @@ class VSPort(VSPortEventHandler, threading.Thread):
         data = _dict({})
         data['name'] = self._port_key
         data['port_name'] = self._port_key
-        data['pid'] = 111 # self._vsport.get_PortOpenAppId()
-        data['app_path'] = 'AAA' # self._vsport.get_PortOpenAppPath()
+        data['pid'] = self._vsport.PortOpenAppId
+        data['app_path'] = self._vsport.PortOpenAppPath
         data['recv_count'] = self._recv_count
         data['send_count'] = self._send_count
-        # data['BaudRate'] = self._vsport.get_Baudrate()
-        # data['DataBits'] = self._vsport.get_Databits()
-        # data['Parity'] = self._vsport.get_Parity()
-        # data['StopBits'] = self._vsport.get_Stopbits()
+        data['BaudRate'] = self._vsport.Baudrate
+        data['DataBits'] = self._vsport.Databits
+        data['Parity'] = self._vsport.Parity
+        data['StopBits'] = self._vsport.StopBits
         peer_data = self.peer_dict() or {}
         data.update(peer_data)
         return data
@@ -159,11 +156,6 @@ class VSPort(VSPortEventHandler, threading.Thread):
         self._peer.clean_count()
 
     def send(self, data):
-        #logging.info("Serial Start Write: {0}".format(len(data)))
-        # self._queue.put(data)
-        self.write_to_vsport(data)
-
-    def write_to_vsport(self, data):
         #logging.info("Serial Write: {0}".format(len(data)))
         ret = self._vsport.WriteArray(bytearray(data))
         if ret > 0:
@@ -179,7 +171,7 @@ class VSPort(VSPortEventHandler, threading.Thread):
         data = self._vsport.ReadArray(lCount)
         data = data.tobytes()
         if data:
-            logging.info("Serial Got: {0}".format(len(data)))
+            # logging.info("Serial Got: {0}".format(len(data)))
             self._peer.on_recv(data)
             if self._stream_pub:
                 self._recv_count += len(data)
@@ -192,16 +184,6 @@ class VSPort(VSPortEventHandler, threading.Thread):
         try:
             self.init_vsport()
             self._peer.start()
-            # while not self._thread_stop:
-            #     pythoncom.PumpWaitingMessages()
-            #     if not self._queue.empty():
-            #         try:
-            #             next_msg = self._queue.get_nowait()
-            #         except queue.Empty:
-            #             pass
-            #         else:
-            #             self.write_to_vsport(next_msg)
-            #     time.sleep(0.001)
             pythoncom.PumpMessages()
         except Exception as ex:
             logging.exception(ex)
