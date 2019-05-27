@@ -18,6 +18,7 @@ class TcpClientHander(Handler, threading.Thread):
         self._thread_stop = False
         self._peer_send_count = 0
         self._peer_recv_count = 0
+        self._socket = None
         Handler.__init__(self)
         threading.Thread.__init__(self)
 
@@ -35,9 +36,10 @@ class TcpClientHander(Handler, threading.Thread):
             try:
                 self._peer_state = 'CONNECTING'
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 s.connect((self._host, self._port))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 0)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 0)
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 logging.info("TCP Client Connected! {0}:{1}".format(self._host, self._port))
                 self._sock_host, self._sock_port = s.getsockname()
                 self._peer_host, self._peer_port = s.getpeername()
@@ -69,6 +71,9 @@ class TcpClientHander(Handler, threading.Thread):
                     time.sleep(3)
             except Exception as ex:
                 logging.exception(ex)
+                if self._socket:
+                    self._socket.close()
+                    self._socket = None
                 continue
 
     def run_select(self):
@@ -80,14 +85,16 @@ class TcpClientHander(Handler, threading.Thread):
                 if s == self._socket:
                     data = s.recv(1024)
                     if data is not None:
-                        # logging.info("TCP Got: {0}".format(len(data)))
+                        if data == b'':
+                            raise RuntimeError("socket connection broken")
+                        logging.info("TCP Got: {0}".format(len(data)))
                         self.send(data)
                         self._peer_recv_count += len(data)
                         if self._stream_pub:
                             self._stream_pub.socket_in_pub(self._port_key, data)
                     else:
                         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
-                        break
+                        raise RuntimeError("socket connection broken")
 
             for s in exeptional:
                 logging.debug("handling exception for {0}".format(s.getpeername()))

@@ -18,6 +18,7 @@ class TcpClientHander(threading.Thread):
         self._peer_send_count = 0
         self._peer_recv_count = 0
         self._vsport = handler
+        self._socket = None
         self._out_queue = queue.Queue()
         threading.Thread.__init__(self)
 
@@ -34,8 +35,8 @@ class TcpClientHander(threading.Thread):
                 self._peer_state = 'CONNECTING'
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self._host, self._port))
-                # s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                # s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 0)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 0)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 0)
                 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 # s.settimeout(0.1)
                 logging.info("TCP Client Connected! {0}:{1}".format(self._host, self._port))
@@ -88,13 +89,15 @@ class TcpClientHander(threading.Thread):
                 if s == self._socket:
                     data = s.recv(1024)
                     if data is not None:
-                        # logging.info("TCP Got: {0}".format(len(data)))
+                        if data == b'':
+                            raise RuntimeError("socket connection broken")
+                        logging.info("TCP Got: {0}".format(len(data)))
                         self._vsport.send(data)
                         self._peer_recv_count += len(data)
                         self._vsport.socket_in_pub(data)
                     else:
                         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
-                        break
+                        raise RuntimeError("socket connection closed")
 
             for s in exeptional:
                 logging.debug("handling exception for {0}".format(s.getpeername()))
