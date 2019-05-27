@@ -2,6 +2,7 @@ import logging
 import threading
 import socket
 import time
+import select
 from vspc.handler import Handler
 
 
@@ -42,23 +43,26 @@ class TcpClientHander(Handler, threading.Thread):
                 self._peer_host, self._peer_port = s.getpeername()
                 self._peer_state = 'CONNECTED'
                 self._socket = s
-                while not self._thread_stop:
-                    data = s.recv(16)
-                    self._peer_recv_count += len(data)
-                    self._stream_pub.socket_in_pub(self._port_key, data)
-                    if data is None:
-                        logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
-                        break
-                    self.send(data)
-                ## closed
-                if self._socket:
-                    self._peer_state = 'DISCONNECTED'
-                    try:
-                        self._socket.close()
-                        self._socket = None
-                    except Exception as ex:
-                        logging.exception(ex)
-                        continue
+                # while not self._thread_stop:
+                #     data = s.recv(16)
+                #     self._peer_recv_count += len(data)
+                #     self._stream_pub.socket_in_pub(self._port_key, data)
+                #     if data is None:
+                #         logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
+                #         break
+                #     self.send(data)
+                # ## closed
+                # if self._socket:
+                #     self._peer_state = 'DISCONNECTED'
+                #     try:
+                #         self._socket.close()
+                #         self._socket = None
+                #     except Exception as ex:
+                #         logging.exception(ex)
+                #         continue
+
+                self.run_select()
+
                 if not self._thread_stop:
                     self._sock_host, self._sock_port = None, 0
                     self._peer_host, self._peer_port = None, 0
@@ -66,6 +70,28 @@ class TcpClientHander(Handler, threading.Thread):
             except Exception as ex:
                 logging.exception(ex)
                 continue
+
+    def run_select(self):
+        inputs = [self._socket]
+
+        while not self._thread_stop:
+            readable, writeable, exeptional = select.select(inputs, [], inputs)
+            for s in readable:
+                if s == self._socket:
+                    data = s.recv(1024)
+                    if data is not None:
+                        # logging.info("TCP Got: {0}".format(len(data)))
+                        self.send(data)
+                        self._peer_recv_count += len(data)
+                        if self._stream_pub:
+                            self._stream_pub.socket_in_pub(self._port_key, data)
+                    else:
+                        logging.error("Client [{0}:{1}] socket closed!!".format(self._host, self._port))
+                        break
+
+            for s in exeptional:
+                logging.debug("handling exception for {0}".format(s.getpeername()))
+                break
 
     def peer_dict(self):
         return {
