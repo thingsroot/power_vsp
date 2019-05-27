@@ -45,7 +45,7 @@ class UPDATEManager(threading.Thread):
             version = json.load(load_f)['version']
         response = None
         try:
-            response = requests.get(new_version_url, headers=headers)
+            response = requests.get(new_version_url, headers=headers, timeout=2)
         except Exception as ex:
             logging.exception(ex)
         if response:
@@ -83,12 +83,12 @@ class UPDATEManager(threading.Thread):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
         response = None
         try:
-            response = requests.get(servers_list_url, headers=headers)
+            response = requests.get(servers_list_url, headers=headers, timeout=2)
         except Exception as ex:
             logging.exception(ex)
         if response:
             ret = json.loads(response.content.decode("gb2312"))
-            logging.info("servers_list::" + str(len(ret)))
+            logging.info("coud_servers_list::" + str(len(ret)))
             # print(ret)
             for k, v in ret.items():
                 ret = ping(v, unit='ms', timeout=1)
@@ -98,9 +98,24 @@ class UPDATEManager(threading.Thread):
                     result.append({"desc": k, "host": v, "delay": 'timeout', "key": 999})
                 pass
             result = sorted(result, key=lambda x: x['key'])
+        else:
+            logging.info("cloud_servers_list:: 0")
+        if result:
             return result
         else:
-            logging.info("servers_list:: 0")
+            local_ret = None
+            with open("./servers_list.json", 'r') as load_f:
+                local_ret = json.load(load_f.decode("gb2312"))
+            if local_ret:
+                for k, v in local_ret.items():
+                    ret = ping(v, unit='ms', timeout=1)
+                    if ret:
+                        result.append({"desc": k, "host": v, "delay": str(int(ret)) + 'ms', "key": int(ret)})
+                    else:
+                        result.append({"desc": k, "host": v, "delay": 'timeout', "key": 999})
+                    pass
+                result = sorted(result, key=lambda x: x['key'])
+            return result
 
     def on_event(self, event, ul_value):
         return True
