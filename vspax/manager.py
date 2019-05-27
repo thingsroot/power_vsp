@@ -2,7 +2,7 @@ import threading
 import logging
 import time
 import json
-import serial.tools.list_ports
+from serial.tools.list_ports import comports
 from vspax.vs_port import VSPort
 
 
@@ -23,7 +23,7 @@ class VSPAXManager(threading.Thread):
         return [handler.get_port_key() for handler in self._ports]
 
     def list_all(self):
-        return serial.tools.list_ports.comports()
+        return [c[0] for c in comports()]
 
     def list_vir(self):
         return self._vsport_ctrl.ListVir()

@@ -192,7 +192,7 @@ def FtVspcEnumPhysical():
     ret = api.FtVspcEnumPhysical(pointer(s))
     if ret == 0:
         print_api_error()
-        return None
+        return 0
     return s.value
 
 
@@ -201,7 +201,7 @@ def FtVspcEnumVirtual():
     ret = api.FtVspcEnumVirtual(pointer(s))
     if ret == 0:
         print_api_error()
-        return None
+        return 0
     return s.value
 
 
