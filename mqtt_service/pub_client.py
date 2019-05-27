@@ -81,7 +81,7 @@ class MQTTStreamPubBase(threading.Thread):
 
     def publish(self, topic, payload, qos=1):
         topic = "v1/{0}/{1}".format(self.service_name, topic)
-        return self.mqttc.publish(topic=topic, payload=payload, qos=qos)
+        return True #return self.mqttc.publish(topic=topic, payload=payload, qos=qos)
 
     def subscribe(self, topic):
         topic = "v1/{0}/{1}".format(self.service_name, topic)

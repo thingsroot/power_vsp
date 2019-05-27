@@ -2,9 +2,8 @@ import logging
 import time
 import threading
 import pythoncom
-from queue import Queue
 import win32com.client
-from ctypes import *
+import queue
 from vspax import *
 from helper import _dict
 
@@ -30,7 +29,7 @@ class VSPort(VSPortEventHandler, threading.Thread):
         self._send_count = 0
         self._stream_pub = None
         self._peer = None
-        self._queue = Queue()
+        self._queue = queue.Queue()
         self._thread_stop = False
         threading.Thread.__init__(self)
 
@@ -45,42 +44,48 @@ class VSPort(VSPortEventHandler, threading.Thread):
                 self._handler = this_handler
 
             def OnBaudRate(self, lBaudRate):
-                # print('OnBaudRate', lBaudRate)
-                return self._handler.OnBaudRate(lBaudRate)
+                pass #print('OnBaudRate', lBaudRate)
+                #return self._handler.OnBaudRate(lBaudRate)
 
             def OnDTR(self, bOn):
-                return self._handler.OnDTR(bOn)
+                pass #print('OnDTR', bOn)
+                #return self._handler.OnDTR(bOn)
 
             def OnHandFlow(self, lControlHandleShake, lFlowReplace, lXonLimit, lXOffLimit):
-                return self._handler.OnHandFlow(lControlHandleShake, lFlowReplace, lXonLimit, lXOffLimit)
+                pass #print('OnHandFlow', lControlHandleShake, lFlowReplace, lXonLimit, lXOffLimit)
+                #return self._handler.OnHandFlow(lControlHandleShake, lFlowReplace, lXonLimit, lXOffLimit)
 
             def OnLineControl(self, cStopBits, cParity, cWordLength):
-                return self._handler.OnLineControl(cStopBits, cParity, cWordLength)
+                pass  # print('OnLineControl', cStopBits, cParity, cWordLength)
+                #return self._handler.OnLineControl(cStopBits, cParity, cWordLength)
 
             def OnOpenClose(self, bOpened):
-                return self._handler.OnOpenClose(bOpened)
+                pass  # print('OnOpenClose', bOpened)
+                #return self._handler.OnOpenClose(bOpened)
 
             def OnRxChar(self, lCount):
+                pass #print('OnRxChar', lCount)
                 return self._handler.OnRxChar(lCount)
 
             def OnRTS(self, bOn):
-                return self._handler.OnRTS(bOn)
+                pass  #  print('OnRTS', bOn)
+                #return self._handler.OnRTS(bOn)
 
             def OnSpecialChars(self, cEofChar, cErrorChar, cBreakChar, cEventChar, cXOnChar, cXoffChar):
-                return self._handler.OnSpecialChars(cEofChar, cErrorChar, cBreakChar, cEventChar, cXOnChar, cXoffChar)
+                pass  #  print('OnSpecialChars', cEofChar, cErrorChar, cBreakChar, cEventChar, cXOnChar, cXoffChar)
+                #return self._handler.OnSpecialChars(cEofChar, cErrorChar, cBreakChar, cEventChar, cXOnChar, cXoffChar)
 
             def OnTimeouts(self, lReadIntervalTimeout, lReadTotalTimeoutMultiplier, lReadTotalTimeoutConstant,
                            lWriteTotalTimeoutMultiplier, lWriteTotalTimeoutConstant):
-                return self._handler.OnTimeouts(lReadIntervalTimeout, lReadTotalTimeoutMultiplier,
-                                                lReadTotalTimeoutConstant, lWriteTotalTimeoutMultiplier,
-                                                lWriteTotalTimeoutConstant)
+                pass # print('OnTimeouts', lReadIntervalTimeout, lReadTotalTimeoutMultiplier, lReadTotalTimeoutConstant, lWriteTotalTimeoutMultiplier, lWriteTotalTimeoutConstant)
 
             def OnEvent(self, EvtMask):
-                # print('OnBaudROnEventate', EvtMask)
-                return self._handler.OnEvent(EvtMask)
+                pass  # print('OnEvent', EvtMask)
+                #return self._handler.OnEvent(EvtMask)
 
             def OnBreak(self, bOn):
-                return self._handler.OnBreak(bOn)
+                pass  # print('OnBreak', bOn)
+                #return self._handler.OnBreak(bOn)
         try:
             pythoncom.CoInitialize()
             self._vsport = win32com.client.DispatchWithEvents(VSPort_ActiveX_ProgID, innerHandler)
@@ -95,6 +100,7 @@ class VSPort(VSPortEventHandler, threading.Thread):
                 return False
             else:
                 logging.info("Attached to port: {0}".format(self._port_key))
+            self._vsport.SetWiring(0x20, 0x10, 0, 0)
             self._vsport.PurgeQueue()
             if self._stream_pub:
                 self._stream_pub.vspax_notify(self._port_key, 'ADD', {"name": self._port_key})
@@ -153,28 +159,31 @@ class VSPort(VSPortEventHandler, threading.Thread):
         self._peer.clean_count()
 
     def send(self, data):
-        self._queue.put(data)
+        #logging.info("Serial Start Write: {0}".format(len(data)))
+        # self._queue.put(data)
+        self.write_to_vsport(data)
 
     def write_to_vsport(self, data):
         #logging.info("Serial Write: {0}".format(len(data)))
         ret = self._vsport.WriteArray(bytearray(data))
         if ret > 0:
+            self._send_count += ret
+            if self._stream_pub:
+                self._stream_pub.vspax_out_pub(self._port_key, data)
+
             if ret != len(data):
                 logging.error("Write Return is not equal to data length")
-            self._send_count += ret
-        if ret and self._stream_pub:
-            self._stream_pub.vspax_out_pub(self._port_key, data)
         return ret
 
     def OnRxChar(self, lCount):
         data = self._vsport.ReadArray(lCount)
         data = data.tobytes()
         if data:
-            # logging.info("Serial Got: {0}".format(len(data)))
+            logging.info("Serial Got: {0}".format(len(data)))
+            self._peer.on_recv(data)
             if self._stream_pub:
                 self._recv_count += len(data)
                 self._stream_pub.vspax_in_pub(self._port_key, data)
-            self._peer.on_recv(data)
 
     def start(self):
         threading.Thread.start(self)
@@ -183,15 +192,17 @@ class VSPort(VSPortEventHandler, threading.Thread):
         try:
             self.init_vsport()
             self._peer.start()
-            while not self._thread_stop:
-                pythoncom.PumpWaitingMessages()
-                try:
-                    while not self._queue.empty():
-                        data = self._queue.get_nowait()
-                        self.write_to_vsport(data)
-                except Exception as ex:
-                    logging.exception(ex)
-                    continue
+            # while not self._thread_stop:
+            #     pythoncom.PumpWaitingMessages()
+            #     if not self._queue.empty():
+            #         try:
+            #             next_msg = self._queue.get_nowait()
+            #         except queue.Empty:
+            #             pass
+            #         else:
+            #             self.write_to_vsport(next_msg)
+            #     time.sleep(0.001)
+            pythoncom.PumpMessages()
         except Exception as ex:
             logging.exception(ex)
         self._peer.stop()
