@@ -91,7 +91,7 @@ class TcpClientHander(threading.Thread):
                     if data is not None:
                         if data == b'':
                             raise RuntimeError("socket connection broken")
-                        logging.info("TCP Got: {0}".format(len(data)))
+                        # logging.info("TCP Got: {0}".format(len(data)))
                         self._vsport.send(data)
                         self._peer_recv_count += len(data)
                         self._vsport.socket_in_pub(data)

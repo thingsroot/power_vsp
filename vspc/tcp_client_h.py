@@ -87,7 +87,7 @@ class TcpClientHander(Handler, threading.Thread):
                     if data is not None:
                         if data == b'':
                             raise RuntimeError("socket connection broken")
-                        logging.info("TCP Got: {0}".format(len(data)))
+                        # logging.info("TCP Got: {0}".format(len(data)))
                         self.send(data)
                         self._peer_recv_count += len(data)
                         if self._stream_pub:
