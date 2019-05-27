@@ -70,10 +70,12 @@ class TcpClientHander(Handler, threading.Thread):
                     self._peer_host, self._peer_port = None, 0
                     time.sleep(3)
             except Exception as ex:
+                self._peer_state = 'ERROR'
                 logging.exception(ex)
                 if self._socket:
                     self._socket.close()
                     self._socket = None
+                time.sleep(3)
                 continue
 
     def run_select(self):

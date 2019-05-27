@@ -75,9 +75,11 @@ class TcpClientHander(threading.Thread):
                     time.sleep(3)
             except Exception as ex:
                 logging.exception(ex)
+                self._peer_state = 'ERROR'
                 if self._socket:
                     self._socket.close()
                     self._socket = None
+                time.sleep(3)
                 continue
 
     def run_select(self):
