@@ -17,6 +17,7 @@ class TcpClientHander(threading.Thread):
         self._thread_stop = False
         self._peer_send_count = 0
         self._peer_recv_count = 0
+        self._peer_state = ''
         self._vsport = handler
         self._socket = None
         self._out_queue = queue.Queue()

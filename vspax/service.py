@@ -27,6 +27,11 @@ class VSPAX_Service(BaseService):
         return self.success("api", id, {"result": reset})
 
     @whitelist.__func__
+    def api_list(self, id, params):
+        ports = self._manager.list_all()
+        return self.success("api", id, ports)
+
+    @whitelist.__func__
     def api_list_vir(self, id, params):
         ports = self._manager.list_vir()
         return self.success("api", id, ports)

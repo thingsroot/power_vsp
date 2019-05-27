@@ -9,3 +9,4 @@ wmi
 requests
 ConfigParser
 ping3
+pyserial

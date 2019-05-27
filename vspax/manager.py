@@ -6,6 +6,8 @@ import json
 import pythoncom
 import win32com.client
 from vspax import *
+import serial.tools.list_ports
+
 
 class VSPAXManager(threading.Thread):
     def __init__(self, stream_pub):
@@ -22,6 +24,9 @@ class VSPAXManager(threading.Thread):
 
     def list_ports(self):
         return [handler.get_port_key() for handler in self._ports]
+
+    def list_all(self):
+        return serial.tools.list_ports.comports()
 
     def list_vir(self):
         if not self._vsport_ctrl:

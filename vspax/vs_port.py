@@ -132,7 +132,7 @@ class VSPort(VSPortEventHandler, threading.Thread):
             self._stream_pub.socket_in_pub(self._port_key, data)
 
     def peer_dict(self):
-        pass
+        return self._peer.peer_dict()
 
     def as_dict(self):
         data = _dict({})
