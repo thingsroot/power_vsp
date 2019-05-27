@@ -1,12 +1,9 @@
 import threading
 import logging
-import vspax
 import time
 import json
-import pythoncom
-import win32com.client
-from vspax import *
 import serial.tools.list_ports
+from vspax.vs_port import VSPort
 
 
 class VSPAXManager(threading.Thread):
@@ -29,14 +26,10 @@ class VSPAXManager(threading.Thread):
         return serial.tools.list_ports.comports()
 
     def list_vir(self):
-        if not self._vsport_ctrl:
-            pythoncom.CoInitialize()
-            self._vsport_ctrl = win32com.client.Dispatch(VSPort_ActiveX_ProgID)
-        ports = []
-        for i in range(0, self._vsport_ctrl.CountVirtualPort):
-            ports.append(self._vsport_ctrl.EnumVirtualPort(i))
+        return self._vsport_ctrl.ListVir()
 
-        return ports
+    def reset_bus(self):
+        return self._vsport_ctrl.ResetBus()
 
     def get(self, name):
         for handler in self._ports:
@@ -52,14 +45,14 @@ class VSPAXManager(threading.Thread):
         return True
 
     def remove(self, name):
-        handler = self.get(name)
-        if not handler:
+        port = self.get(name)
+        if not port:
             logging.error("Failed to find port {0}!!".format(name))
             return False
 
-        handler.stop()
+        port.stop()
 
-        self._ports.remove(handler)
+        self._ports.remove(port)
         return True
 
     def info(self, name):
@@ -74,13 +67,9 @@ class VSPAXManager(threading.Thread):
         self._heartbeat_timeout = timeout + time.time()
         return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
 
-    def reset_bus(self):
-        if not self._vsport_ctrl:
-            pythoncom.CoInitialize()
-            self._vsport_ctrl = win32com.client.Dispatch(VSPort_ActiveX_ProgID)
-        return self._vsport_ctrl.ResetBus()
-
     def run(self):
+        self._vsport_ctrl = VSPort()
+        self._vsport_ctrl.init()
         while not self._thread_stop:
             time.sleep(1)
 
@@ -94,11 +83,12 @@ class VSPAXManager(threading.Thread):
             if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
                 pass #self.clean_all()
 
-        logging.warning("Close VSPAX Library!!!")
+        self._vsport_ctrl.close()
+        logging.warning("VSPAX Manager Closed!!!")
 
     def stop(self):
         self._thread_stop = True
-        self.join()
+        self.join(3)
 
     def clean_all(self):
         keys = [h.get_port_key() for h in self._ports]

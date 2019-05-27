@@ -45,14 +45,14 @@ class TcpServerHandler(Handler, threading.Thread):
 
     def stop(self):
         self._thread_stop = True
-        self.join(1)
+        self.join(2)
         Handler.stop(self)
 
     def run(self):
         outputs = []
         message_queues = {}
         while not self._thread_stop:
-            readable, writeable, exeptional = select.select(self._clients, outputs, self._clients)
+            readable, writeable, exeptional = select.select(self._clients, outputs, self._clients, 1)
             for s in readable:
                 if s is self._servers:
                     conn, client_addr = s.accept()

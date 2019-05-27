@@ -2,7 +2,6 @@ import vspax
 from mqtt_service import *
 from vspax.tcp_client_h import TcpClientHander
 from vspax.tcp_server_h import TcpServerHandler
-from vspax.vs_port import VSPort
 from hbmqtt_broker.conf import MQTT_PROT
 
 API_RESULT = "@api/RESULT"
@@ -47,15 +46,13 @@ class VSPAX_Service(BaseService):
         peer = params.get("peer")
         if not peer:
             raise NotFound("peer_not_found")
-        port = VSPort(port_name)
-        peer_handler = None
+        handler = None
         if peer.get("type") == "tcp_client":
-            peer_handler = TcpClientHander(port, peer.get("host"), peer.get("port"), peer.get("info"))
+            handler = TcpClientHander(port_name, peer.get("host"), peer.get("port"), peer.get("info"))
         if peer.get("type") == "tcp_server":
-            peer_handler = TcpServerHandler(port, peer.get("host"), peer.get("port"), peer.get("info"))
+            handler = TcpServerHandler(port_name, peer.get("host"), peer.get("port"), peer.get("info"))
 
-        port.set_peer(peer_handler)
-        ret = self._manager.add(port)
+        ret = self._manager.add(handler)
         if ret:
             return self.api_list_vir(id, {})
         else:

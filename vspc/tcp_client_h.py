@@ -28,7 +28,7 @@ class TcpClientHander(Handler, threading.Thread):
 
     def stop(self):
         self._thread_stop = True
-        self.join(1)
+        self.join(2)
         Handler.stop(self)
 
     def run(self):
@@ -78,11 +78,15 @@ class TcpClientHander(Handler, threading.Thread):
                 time.sleep(3)
                 continue
 
+        if self._socket:
+            self._socket.close()
+            self._socket = None
+
     def run_select(self):
         inputs = [self._socket]
 
         while not self._thread_stop:
-            readable, writeable, exeptional = select.select(inputs, [], inputs)
+            readable, writeable, exeptional = select.select(inputs, [], inputs, 1)
             for s in readable:
                 if s == self._socket:
                     data = s.recv(1024)

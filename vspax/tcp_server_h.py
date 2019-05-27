@@ -3,10 +3,13 @@ import socket
 import threading
 import queue
 import logging
+from vspax.handler import Handler
 
 
-class TcpServerHandler(threading.Thread):
-    def __init__(self, handler, host, port, info):
+class TcpServerHandler(Handler, threading.Thread):
+    def __init__(self, port_key, host, port, info):
+        Handler.__init__(self, port_key)
+        threading.Thread.__init__(self)
         self._clients = []
         self._servers = []
         self._manager = None
@@ -20,10 +23,9 @@ class TcpServerHandler(threading.Thread):
         self._peer_send_count = 0
         self._peer_recv_count = 0
         self._thread_stop = False
-        self._vsport = handler
-        threading.Thread.__init__(self)
 
     def start(self):
+        Handler.start(self)
         try:
             server = socket.socket()
             server.setblocking(0)
@@ -43,13 +45,14 @@ class TcpServerHandler(threading.Thread):
 
     def stop(self):
         self._thread_stop = True
-        self.join(1)
+        self.join(2)
+        Handler.stop(self)
 
     def run(self):
         outputs = []
         message_queues = {}
         while not self._thread_stop:
-            readable, writeable, exeptional = select.select(self._clients, outputs, self._clients)
+            readable, writeable, exeptional = select.select(self._clients, outputs, self._clients, 1)
             for s in readable:
                 if s is self._servers:
                     conn, client_addr = s.accept()
@@ -66,13 +69,13 @@ class TcpServerHandler(threading.Thread):
                 else:
                     data = s.recv(1024)
                     self._peer_recv_count += len(data)
-                    self._vsport.socket_in_pub(data)
+                    self.socket_in_pub(data)
                     if data:
                         logging.debug("Data recevied {0}: {1}".format(s.getpeername()[0], data))
                         # message_queues[s].put(data)
                         # if s not in outputs:
                         #     outputs.append(s)
-                        self._vsport.send(data)
+                        self.send(data)
                     else:
                         if s in outputs:
                             outputs.remove(s)
@@ -127,9 +130,10 @@ class TcpServerHandler(threading.Thread):
     def clean_count(self):
         self._peer_send_count = 0
         self._peer_recv_count = 0
+        Handler.clean_count(self)
 
     def on_recv(self, data):
         for client in self._clients:
             sent_size = client.send(data)
             self._peer_send_count += sent_size
-            self._vsport.socket_out_pub(data[0:sent_size])
+            self.socket_out_pub(data[0:sent_size])
