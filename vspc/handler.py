@@ -19,9 +19,6 @@ class Handler:
         self._stream_pub = None
         self._peer_state = 'INITIALIZED'
 
-        ### Internal usage
-        self._purge_rx_clear = False
-
     def start(self):
         self._stream_pub.vspc_notify(self._port_key, 'ADD', {"name": self._port_num, "num": self._port_name})
 
@@ -108,22 +105,22 @@ class Handler:
             self._open_app = ""
 
         if event == ftvspcPortEventRxChar:
-            logging.debug("Port {0} RxChar. {1}}", self._port_key, ul_value)
+            # logging.debug("Port {0} RxChar. {1}}", self._port_key, ul_value)
             sz = FtVspcGetInQueueBytes(self._handle)
             data = FtVspcRead(self._handle, sz)
 
             if data:
+                self.on_recv(data)
                 if self._stream_pub:
                     self._recv_count += len(data)
                     self._stream_pub.vspc_in_pub(self._port_key, data)
-                self.on_recv(data)
 
         if event == ftvspcPortEventDtr:
-            logging.debug("Application has set DTR to:", ul_value)
+            # logging.debug("Application has set DTR to:", ul_value)
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventRts:
-            logging.debug("Application has set RTS to:", ul_value)
+            # logging.debug("Application has set RTS to:", ul_value)
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventBaudRate:
@@ -167,10 +164,6 @@ class Handler:
             PURGE_TXCLEAR
             0x0004
             '''
-            if (ul_value & 0x08) == 0x08:   # RX_CLEAR
-                self._purge_rx_clear = True
-                time.sleep(0.2)
-                self._purge_rx_clear = False
 
         if event == ftvspcPortEventXonLim:
             logging.debug("Application has set XonLim to:", ul_value)
@@ -261,13 +254,13 @@ class Handler:
         return 0
 
     def send(self, data):
-        if self._purge_rx_clear:
-            return len(data)    # Data skipped
         ret = FtVspcWrite(self._handle, data)
         if ret:
             self._send_count += len(data)
-        if ret and self._stream_pub:
-            self._stream_pub.vspc_out_pub(self._port_key, data)
+            if self._stream_pub:
+                self._stream_pub.vspc_out_pub(self._port_key, data)
+        else:
+            logging.error("Write Return is not equal to data length")
         return ret
 
     def get_port_name(self):
