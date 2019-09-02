@@ -5,6 +5,7 @@ import ctypes
 import ctypes.wintypes
 import time
 import json
+import requests
 import os
 
 
@@ -159,10 +160,36 @@ class VSPCManager(threading.Thread):
             return False
         return handler.as_dict()
 
-    def enable_heartbeat(self, flag, timeout):
+    def enable_heartbeat(self, flag, timeout,  auth_code, gate_sn):
         self._enable_heartbeat = flag
         self._heartbeat_timeout = timeout + time.time()
+        self.keep_vspc_alive(auth_code, gate_sn)
         return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
+
+    def keep_vspc_alive(self,  auth_code, gate_sn):
+        if gate_sn and auth_code:
+            rand_id = gate_sn + '/send_output/heartbeat_timeout/' + str(time.time())
+            url = 'http://ioe.thingsroot.com'
+            datas = {
+                "id": rand_id,
+                "device": gate_sn,
+                "data": {
+                    "device": gate_sn + ".freeioe_Vserial",
+                    "output": 'heartbeat_timeout',
+                    "value": 60,
+                    "prop": "value"
+                }
+            }
+            ret = self.action_send_output(url, auth_code, datas)
+
+    def action_send_output(self, ioeurl, Authcode, send_data):
+        url = ioeurl + '/api/method/iot.device_api.send_output'
+        headers = {'AuthorizationCode': Authcode, 'Content-Type': 'application/json'}
+        response = requests.post(url, headers=headers, data=json.dumps(send_data))
+        ret_content = None
+        if response:
+            ret_content = json.loads(response.content.decode("utf-8"))
+        return ret_content
 
     def on_event(self, event, ul_value):
         port = None

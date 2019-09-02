@@ -80,7 +80,9 @@ class VSPAX_Service(BaseService):
     def api_keep_alive(self, id, params):
         _enable_heartbeat = params.enable_heartbeat
         _heartbeat_timeout = params.heartbeat_timeout
-        ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout)
+        auth_code = params.get('auth_code')
+        gate_sn = params.get('gate_sn')
+        ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout, auth_code, gate_sn)
         if ret:
             return self.success("api", id, ret)
         else:
