@@ -44,6 +44,7 @@ class VNETManager(threading.Thread):
         threading.Thread.__init__(self)
         self._services = ["frpc_Vnet_service", "tinc.tofreeioebridge", "tinc.tofreeioerouter"]
         self._working_config = {}
+        self._working_proxyname = None
         self._result = {}
         self._handlers = []
         self._timeout = 5
@@ -227,6 +228,7 @@ class VNETManager(threading.Thread):
         inicfg = configparser.ConfigParser()
         inicfg.read(file)
         for k, v in proxycfg.items():
+            self._working_proxyname = k
             inicfg.add_section(k)
             for mk, mv in v.items():
                 inicfg.set(k, mk, mv)
@@ -319,9 +321,7 @@ class VNETManager(threading.Thread):
         if services_start == len(dest_services):
             self._result["services_stop"] = True
             self._working_config['is_running'] = False
-            # self._working_config['vnet_cfg'] = None
-            # self._working_config['common'] = None
-            # self._working_config['proxy'] = None
+
         else:
             self._result["services_stop"] = False
         if os.access(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini', os.F_OK):
@@ -342,7 +342,8 @@ class VNETManager(threading.Thread):
             except Exception as ex:
                 logging.error('local_proxy_status :: ' + str(ex))
             if self._working_config.get('is_running'):
-                proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
+                # proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
+                proxy_key = self._working_proxyname
                 for pr in proxies:
                     if pr['name'] == proxy_key:
                         proxy = pr
@@ -369,7 +370,8 @@ class VNETManager(threading.Thread):
             except Exception as ex:
                 logging.error('cloud_proxy_status :: ' + str(ex))
             if self._working_config.get('is_running'):
-                proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
+                # proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
+                proxy_key = self._working_proxyname
                 for pr in proxies:
                     if pr['name'] == proxy_key:
                         proxy = pr
@@ -407,12 +409,13 @@ class VNETManager(threading.Thread):
         return ret_content
 
     def post_to_cloud(self, auth_code, output, peer_host, peer_port):
-        gate_sn = self._working_config['vnet_cfg']["gate_sn"]
+        gate_sn = self._working_config['vnet_cfg'].get("gate_sn")
         rand_id = gate_sn + '/send_output/' + output + '/' + str(time.time())
-        net_mode = self._working_config['vnet_cfg']["net_mode"]
+        net_mode = self._working_config['vnet_cfg'].get("net_mode")
+        user_id = self._working_config['vnet_cfg'].get("user_id")
         url = 'http://ioe.thingsroot.com'
         self._AuthorizationCode = auth_code
-        vnet_config = {"net": net_mode, "Address": peer_host, "Port": peer_port}
+        vnet_config = {"net": net_mode, "Address": peer_host, "Port": peer_port, "proxy_name": self._working_proxyname, "user_id": user_id}
         datas = {
             "id": rand_id,
             "device": gate_sn,
@@ -456,10 +459,14 @@ class VNETManager(threading.Thread):
             return {'message': 'offline', "delay": 'timeout'}
 
     def enable_heartbeat(self, flag, timeout,  auth_code, gate_sn):
-        self._enable_heartbeat = flag
-        self._heartbeat_timeout = timeout + time.time()
-        self.keep_vnet_alive(auth_code, gate_sn)
-        return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
+        working_config = self._working_config
+        if gate_sn == working_config['vnet_cfg']['gate_sn']:
+            self._enable_heartbeat = flag
+            self._heartbeat_timeout = timeout + time.time()
+            self.keep_vnet_alive(auth_code, gate_sn)
+            return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
+        else:
+            return False
 
     def keep_vnet_alive(self,  auth_code, gate_sn):
         if gate_sn and auth_code:
@@ -493,40 +500,44 @@ class VNETManager(threading.Thread):
         while not self._thread_stop:
             time.sleep(1)
             # print("_working_config::::", self._working_config)
-            status = self.service_status()
-            self._mqtt_stream_pub.vnet_status('SERVICES', json.dumps(status))
-            self._mqtt_stream_pub.vnet_status('CONFIG', json.dumps(self._working_config))
+            try:
+                status = self.service_status()
+                self._mqtt_stream_pub.vnet_status('SERVICES', json.dumps(status))
+                self._mqtt_stream_pub.vnet_status('CONFIG', json.dumps(self._working_config))
 
-            # print("xxxxxxx", self._working_config.get('is_running'), self._working_config.get('vnet_cfg'))
-            if self._working_config.get('is_running') and self._working_config.get('vnet_cfg'):
-                if self._working_config["vnet_cfg"]["dest_ip"]:
-                    data = self.check_ip_alive(self._working_config["vnet_cfg"]["dest_ip"])
-                    self._mqtt_stream_pub.dest_status(self._working_config["vnet_cfg"]["dest_ip"], json.dumps(data))
+                # print("xxxxxxx", self._working_config.get('is_running'), self._working_config.get('vnet_cfg'))
+                if self._working_config.get('is_running') and self._working_config.get('vnet_cfg'):
+                    if self._working_config["vnet_cfg"]["dest_ip"]:
+                        data = self.check_ip_alive(self._working_config["vnet_cfg"]["dest_ip"])
+                        self._mqtt_stream_pub.dest_status(self._working_config["vnet_cfg"]["dest_ip"], json.dumps(data))
 
-                local_proxy_status = self.local_proxy_status()
-                if local_proxy_status:
-                    self._mqtt_stream_pub.proxy_status('LOCAL_PROXY', json.dumps(local_proxy_status))
-                else:
-                    self._mqtt_stream_pub.proxy_status('LOCAL_PROXY', json.dumps({"status": "error"}))
-
-                if span == self._timeout:
-                    cloud_proxy_status = self.cloud_proxy_status()
-                    if cloud_proxy_status:
-                        self._mqtt_stream_pub.proxy_status('CLOUD_PROXY', json.dumps(cloud_proxy_status))
+                    local_proxy_status = self.local_proxy_status()
+                    if local_proxy_status:
+                        self._mqtt_stream_pub.proxy_status('LOCAL_PROXY', json.dumps(local_proxy_status))
                     else:
-                        self._mqtt_stream_pub.proxy_status('CLOUD_PROXY', json.dumps({"status": "error"}))
+                        self._mqtt_stream_pub.proxy_status('LOCAL_PROXY', json.dumps({"status": "error"}))
 
-                    span = span - 1
-                elif span == 0:
-                    span = self._timeout
+                    if span == self._timeout:
+                        cloud_proxy_status = self.cloud_proxy_status()
+                        if cloud_proxy_status:
+                            self._mqtt_stream_pub.proxy_status('CLOUD_PROXY', json.dumps(cloud_proxy_status))
+                        else:
+                            self._mqtt_stream_pub.proxy_status('CLOUD_PROXY', json.dumps({"status": "error"}))
+
+                        span = span - 1
+                    elif span == 0:
+                        span = self._timeout
+                    else:
+                        span = span - 1
+
+                if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
+                        self.clean_all()
                 else:
-                    span = span - 1
-
-            if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
-                    self.clean_all()
-            else:
-                # print(time.time() - self._heartbeat_timeout)
-                pass
+                    # print(time.time() - self._heartbeat_timeout)
+                    pass
+            except Exception as ex:
+                logging.warning('XXXXXXXXXXXXXXXXXXXXXXXXXXX')
+                logging.exception(ex)
 
         logging.warning("Close VNET!")
 

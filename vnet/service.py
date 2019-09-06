@@ -1,6 +1,7 @@
 import threading
 import logging
 import json
+import time
 import os
 from mqtt_service import *
 from hbmqtt_broker.conf import MQTT_PROT
@@ -85,6 +86,8 @@ class VNET_Service(BaseService):
             vnettype = params.vnet_cfg['net_mode']
             proxy_cfg = {
                 params.vnet_cfg['gate_sn'] + '_tofreeioe' + vnettype: frpc_proxy[vnettype]
+                # params.vnet_cfg['gate_sn'] + '_' + vnettype + '_' + str(int(time.time())): frpc_proxy[vnettype]
+            #     Adjustment frpc proxy name
             }
             self._manager.add_proxycfg_frpcini(file, proxy_cfg)
 
