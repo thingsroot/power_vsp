@@ -134,7 +134,7 @@ class VNETManager(threading.Thread):
         #     print(k, v)
         #     if not v:
         #         return {"message": False}
-        return {"actiion": True}
+        return {"action": True}
 
     def list_taps(self, wmis):
         tap_nics = []
@@ -339,17 +339,13 @@ class VNETManager(threading.Thread):
                 response = requests.get(url, headers=headers)
                 ret_content = json.loads(response.content.decode("utf-8"))
                 proxies = ret_content['tcp']
-            except Exception as ex:
-                logging.error('local_proxy_status :: ' + str(ex))
-            if self._working_config.get('is_running'):
-                # proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
                 proxy_key = self._working_proxyname
                 for pr in proxies:
                     if pr['name'] == proxy_key:
                         proxy = pr
                         break
-            else:
-                logging.info('services is not running!')
+            except Exception as ex:
+                logging.error('local_proxy_status :: ' + str(ex))
         return proxy
 
     def cloud_proxy_status(self, url=None, auth=None):
@@ -367,17 +363,13 @@ class VNETManager(threading.Thread):
                 response = requests.get(url, headers=headers, auth=HTTPBasicAuth(auth[0], auth[1]))
                 ret_content = json.loads(response.content.decode("utf-8"))
                 proxies = ret_content['proxies']
-            except Exception as ex:
-                logging.error('cloud_proxy_status :: ' + str(ex))
-            if self._working_config.get('is_running'):
-                # proxy_key = self._working_config["vnet_cfg"]["gate_sn"] + '_tofreeioe' + self._working_config["vnet_cfg"]["net_mode"]
                 proxy_key = self._working_proxyname
                 for pr in proxies:
                     if pr['name'] == proxy_key:
                         proxy = pr
                         break
-            else:
-                logging.info('services is not running!')
+            except Exception as ex:
+                logging.error('cloud_proxy_status :: ' + str(ex))
         return proxy
 
     def Handle_route_table(self):
@@ -460,11 +452,14 @@ class VNETManager(threading.Thread):
 
     def enable_heartbeat(self, flag, timeout,  auth_code, gate_sn):
         working_config = self._working_config
-        if gate_sn == working_config['vnet_cfg']['gate_sn']:
-            self._enable_heartbeat = flag
-            self._heartbeat_timeout = timeout + time.time()
-            self.keep_vnet_alive(auth_code, gate_sn)
-            return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
+        if working_config.get('vnet_cfg'):
+            if gate_sn ==working_config['vnet_cfg']['gate_sn']:
+                self._enable_heartbeat = flag
+                self._heartbeat_timeout = timeout + time.time()
+                self.keep_vnet_alive(auth_code, gate_sn)
+                return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
+            else:
+                return False
         else:
             return False
 
@@ -536,7 +531,7 @@ class VNETManager(threading.Thread):
                     # print(time.time() - self._heartbeat_timeout)
                     pass
             except Exception as ex:
-                logging.warning('XXXXXXXXXXXXXXXXXXXXXXXXXXX')
+                logging.warning('err!err!err!err!')
                 logging.exception(ex)
 
         logging.warning("Close VNET!")

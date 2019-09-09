@@ -1,7 +1,7 @@
 import threading
 import logging
 import json
-import time
+from time import sleep
 import os
 from mqtt_service import *
 from hbmqtt_broker.conf import MQTT_PROT
@@ -111,7 +111,6 @@ class VNET_Service(BaseService):
     @whitelist.__func__
     def api_post_gate(self, id, params):
         # print("params:", params)
-        query_proxy = self._manager.local_proxy_status()
         output = params.get('output')
         if output == 'vnet_stop':
             peer_host = 'nothing'
@@ -124,6 +123,12 @@ class VNET_Service(BaseService):
                 return self.failure("api", id, "post error")
             pass
         elif output == 'vnet_config':
+            query_proxy = None
+            for i in range(2):
+                query_proxy = self._manager.local_proxy_status()
+                if query_proxy:
+                    break
+                sleep(i + 2)
             if query_proxy:
                 if query_proxy['status'] == 'running':
                     peer_host = query_proxy['remote_addr'].split(':')[0]
@@ -137,7 +142,7 @@ class VNET_Service(BaseService):
                 else:
                     return self.failure("api", id, "proxy error")
             else:
-                return self.failure("api", id, "proxy error")
+                return self.failure("api", id, "proxy None")
         else:
             return self.failure("api", id, "output error")
 
@@ -176,8 +181,11 @@ class VNET_Service(BaseService):
         _heartbeat_timeout = params.heartbeat_timeout
         auth_code = params.get('auth_code')
         gate_sn = params.get('gate_sn')
-        ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout, auth_code, gate_sn)
-        if ret:
-            return self.success("api", id, ret)
+        if gate_sn:
+            ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout, auth_code, gate_sn)
+            if ret:
+                return self.success("api", id, ret)
+            else:
+                return self.failure("api", id, "error")
         else:
-            return self.failure("api", id, "error")
+            return self.failure("api", id, "no gate_sn")
