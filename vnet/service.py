@@ -177,11 +177,11 @@ class VNET_Service(BaseService):
 
     @whitelist.__func__
     def api_keep_alive(self, id, params):
-        _enable_heartbeat = params.enable_heartbeat
-        _heartbeat_timeout = params.heartbeat_timeout
+        _enable_heartbeat = params.get('enable_heartbeat')
+        _heartbeat_timeout = params.get('heartbeat_timeout')
         auth_code = params.get('auth_code')
         gate_sn = params.get('gate_sn')
-        if gate_sn:
+        if gate_sn and auth_code:
             ret = self._manager.enable_heartbeat(_enable_heartbeat, _heartbeat_timeout, auth_code, gate_sn)
             if ret:
                 return self.success("api", id, ret)

@@ -451,13 +451,14 @@ class VNETManager(threading.Thread):
             return {'message': 'offline', "delay": 'timeout'}
 
     def enable_heartbeat(self, flag, timeout,  auth_code, gate_sn):
+        # logging.error(flag, timeout,  auth_code, gate_sn)
         working_config = self._working_config
         if working_config.get('vnet_cfg'):
-            if gate_sn ==working_config['vnet_cfg']['gate_sn']:
+            if gate_sn == working_config['vnet_cfg']['gate_sn']:
                 self._enable_heartbeat = flag
-                self._heartbeat_timeout = timeout + time.time()
+                self._heartbeat_timeout = int(timeout) + time.time()
                 self.keep_vnet_alive(auth_code, gate_sn)
-                return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout}
+                return {"enable_heartbeat": self._enable_heartbeat, "heartbeat_timeout": self._heartbeat_timeout, "gate_sn": gate_sn}
             else:
                 return False
         else:
