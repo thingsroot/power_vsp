@@ -303,7 +303,10 @@ class VNETManager(threading.Thread):
         else:
             self._result["services_start"] = False
         # os.remove(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini')
-        return self._result
+        action_result = {}
+        action_result['tap_nic'] = self._result["tap_nic"]
+        action_result['services_start'] = self._result["services_start"]
+        return action_result
 
     def service_stop(self, vnettype):
         dest_services = ["frpc_Vnet_service", "tinc.tofreeioebridge"]
@@ -326,7 +329,9 @@ class VNETManager(threading.Thread):
             self._result["services_stop"] = False
         if os.access(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini', os.F_OK):
             os.remove(os.getcwd() + '\\vnet\\tinc\\_frpc\\frpc.ini')
-        return self._result
+        action_result = {}
+        action_result['services_stop'] = self._result["services_stop"]
+        return action_result
 
     def local_proxy_status(self):
         proxy = None
@@ -435,7 +440,10 @@ class VNETManager(threading.Thread):
                 self._result["gate_mes"] = action_ret["message"]
             else:
                 logging.info('gate has no response !')
-            return self._result
+            action_result = {}
+            action_result['cloud_mes'] = self._result["cloud_mes"]
+            action_result['gate_mes'] = self._result["gate_mes"]
+            return action_result
         else:
             logging.info('cloud has no response !')
             return False
