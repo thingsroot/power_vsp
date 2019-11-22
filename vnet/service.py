@@ -124,7 +124,7 @@ class VNET_Service(BaseService):
             pass
         elif output == 'vnet_config':
             query_proxy = None
-            for i in range(2):
+            for i in range(3):
                 query_proxy = self._manager.local_proxy_status()
                 if query_proxy:
                     break
@@ -140,10 +140,13 @@ class VNET_Service(BaseService):
                     else:
                         return self.failure("api", id, "post error")
                 else:
+                    self._manager.clean_all()
                     return self.failure("api", id, "proxy error")
             else:
+                self._manager.clean_all()
                 return self.failure("api", id, "proxy None")
         else:
+            self._manager.clean_all()
             return self.failure("api", id, "output error")
 
     @whitelist.__func__

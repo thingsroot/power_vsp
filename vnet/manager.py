@@ -439,12 +439,18 @@ class VNETManager(threading.Thread):
             if action_ret:
                 self._result["gate_mes"] = action_ret["message"]
             else:
+                if self._working_config.get('is_running'):
+                    self.clean_all()
+                self._result["gate_mes"] = 'gate has no response !'
                 logging.info('gate has no response !')
             action_result = {}
             action_result['cloud_mes'] = self._result["cloud_mes"]
             action_result['gate_mes'] = self._result["gate_mes"]
             return action_result
         else:
+            working_config = self._working_config
+            if working_config.get('vnet_cfg'):
+                self.clean_all()
             logging.info('cloud has no response !')
             return False
 
