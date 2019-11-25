@@ -278,10 +278,12 @@ class VNETManager(threading.Thread):
                 is_running = False
         services_status['is_running'] = is_running
         self._working_config['is_running'] = is_running
-        if not self._working_config.get('vnet_cfg') and is_running:
-            for s in self._services:
-                cmd1 = 'sc stop ' + s
-                os.popen(cmd1)
+        if not self._working_config.get('vnet_cfg'):
+            if is_running:
+                logging.warning('stopping services!')
+                for s in self._services:
+                    cmd1 = 'sc stop ' + s
+                    os.popen(cmd1)
         return services_status
 
     def service_start(self, vnettype):
@@ -541,6 +543,8 @@ class VNETManager(threading.Thread):
                         span = span - 1
 
                 if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
+                    if self._working_config.get('is_running'):
+                        logging.warning('heartbeat timeout!')
                         self.clean_all()
                 else:
                     # print(time.time() - self._heartbeat_timeout)

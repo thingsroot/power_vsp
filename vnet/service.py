@@ -116,6 +116,7 @@ class VNET_Service(BaseService):
             peer_host = 'nothing'
             peer_port = 'nothing'
             auth_code = params.get('auth_code')
+            logging.info('post vnet_stop to gate!')
             ret = self._manager.post_to_cloud(auth_code, output, peer_host, peer_port)
             if ret:
                 return self.success("api", id, ret)
@@ -125,6 +126,7 @@ class VNET_Service(BaseService):
         elif output == 'vnet_config':
             query_proxy = None
             for i in range(3):
+                logging.info(str(i)+' query local_proxy_status!')
                 query_proxy = self._manager.local_proxy_status()
                 if query_proxy:
                     break
@@ -134,6 +136,7 @@ class VNET_Service(BaseService):
                     peer_host = query_proxy['remote_addr'].split(':')[0]
                     peer_port = query_proxy['remote_addr'].split(':')[1]
                     auth_code = params.get('auth_code')
+                    logging.info('post vnet_start to gate!')
                     ret = self._manager.post_to_cloud(auth_code, output, peer_host, peer_port)
                     if ret:
                         return self.success("api", id, ret)
