@@ -206,10 +206,16 @@ class VNETManager(threading.Thread):
         else:
             if frps_cfg.get('server_addr'):
                 default_frpc['server_addr'] = frps_cfg['server_addr']
+            else:
+                default_frpc['server_addr'] = "bj.proxy.thingsroot.com"
             if frps_cfg.get('server_port'):
                 default_frpc['server_port'] = frps_cfg['server_port']
+            else:
+                default_frpc['server_port'] = "1699"
             if frps_cfg.get('token'):
                 default_frpc['token'] = frps_cfg['token']
+            else:
+                default_frpc['token'] = "F^AYnHp29U=M96#o&ESqXB3pL=$)W*qr"
             frps_cfg = default_frpc
         frps_cfg['protocol'] = self._working_config['vnet_cfg']['net_protocol']
         # print(frps_cfg)

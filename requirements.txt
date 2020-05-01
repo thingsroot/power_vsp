@@ -7,6 +7,5 @@ ConfigParser
 pypiwin32
 wmi
 requests
-ConfigParser
 ping3
 pyserial

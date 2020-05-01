@@ -12,14 +12,14 @@ broker_config = {
         #     "certfile": "localhost_chain.crt",
         #     "keyfile": "localhost_key.key"
         # },
-        "my-ws-ssl-1": {
-            "bind": "127.0.0.1:6884",
-            "type": "ws",
-            "ssl": "on",
-            "cafile": "KeyManager Test RSA CA_chain.crt",
-            "certfile": "localhost_chain.crt",
-            "keyfile": "localhost_key.key"
-        },
+        # "my-ws-ssl-1": {
+        #     "bind": "127.0.0.1:6884",
+        #     "type": "ws",
+        #     "ssl": "on",
+        #     "cafile": "KeyManager Test RSA CA_chain.crt",
+        #     "certfile": "localhost_chain.crt",
+        #     "keyfile": "localhost_key.key"
+        # },
         "my-tcp-1": {
             "bind": "127.0.0.1:7883"
         },

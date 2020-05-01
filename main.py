@@ -21,6 +21,7 @@ serivces = [
 blueprints = []
 context = _dict({})
 
+
 if __name__ == '__main__':
     #formatter = '%(asctime)s %(name)-12s %(levelname)-8s %(module)s:%(message)s'
     formatter = "[%(asctime)s] :: %(levelname)s :: %(name)s :: %(message)s"
@@ -30,7 +31,8 @@ if __name__ == '__main__':
     # logging.info("Staring service runner..")
     # runner.start()
     if sys.argv[0] != os.path.split(os.path.realpath(__file__))[1]:
-        os.chdir(os.path.split(sys.argv[0])[0])
+        if os.path.split(sys.argv[0])[0]:
+            os.chdir(os.path.split(sys.argv[0])[0])
 
     log_level = 'INFO'
     log_filenum = 9
