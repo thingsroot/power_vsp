@@ -113,7 +113,7 @@ class TcpClientHander(Handler, threading.Thread):
     def on_recv(self, data):
         if self._socket:
             sent_size = self._socket.send(data)
-            # logging.info("TCP Send: {0} - {1}".format(len(data), sent_size))
+            # logging.debug("TCP Send: {0} - {1}".format(len(data), sent_size))
             self._peer_send_count += sent_size
             if sent_size == len(data):
                 self.socket_out_pub(data)
