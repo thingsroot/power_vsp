@@ -1,11 +1,15 @@
 import logging
 import threading
+import struct
+import binascii
 import pythoncom
 import win32com.client
 from vspax import *
 from helper import _dict
 from vspax.com_worker import COM_Worker
 
+BaudRate_map = {"110": 1, "300": 2, "600": 3, "1200": 4, "2400": 5, "4800": 6, "9600": 7, "19200": 8, "38400": 9,
+    "57600": 10, "115200": 11, "460800": 12, "921600": 13}
 
 class VSPortEventHandler:
     def OnBaudRate(self, lBaudRate): pass
@@ -27,6 +31,7 @@ class Handler:
         self._recv_count = 0
         self._send_count = 0
         self._stream_pub = None
+        self._com_params = [0] * 6
         self._com_worker = COM_Worker(self)
 
     def start(self):
@@ -44,7 +49,8 @@ class Handler:
 
             def OnBaudRate(self, lBaudRate):
                 pass #print('OnBaudRate', lBaudRate)
-                #return self._handler.OnBaudRate(lBaudRate)
+
+                return self._handler.OnBaudRate(lBaudRate)
 
             def OnDTR(self, bOn):
                 pass #print('OnDTR', bOn)
@@ -56,7 +62,7 @@ class Handler:
 
             def OnLineControl(self, cStopBits, cParity, cWordLength):
                 pass  # print('OnLineControl', cStopBits, cParity, cWordLength)
-                #return self._handler.OnLineControl(cStopBits, cParity, cWordLength)
+                return self._handler.OnLineControl(cStopBits, cParity, cWordLength)
 
             def OnOpenClose(self, bOpened):
                 pass  # print('OnOpenClose', bOpened)
@@ -174,10 +180,38 @@ class Handler:
 
     def OnRxChar(self, lCount):
         data = self._vsport.ReadArray(lCount)
+        fixedbin = b'\xfe'
+        for v in self._com_params:
+            fixedbin = fixedbin + struct.pack('b', v)
+        fixedbin = fixedbin + b'\xef'
+        # print(self._com_params)
         data = data.tobytes()
         if data:
             # logging.info("Serial Got: {0}".format(len(data)))
-            self.on_recv(data)
+            # print("send data to remote::", str(binascii.b2a_hex(fixedbin + data))[2:-1].upper())
+            self.on_recv(fixedbin + data)
+            # self.on_recv(data)
             if self._stream_pub:
                 self._recv_count += len(data)
                 self._stream_pub.vspax_in_pub(self._port_key, data)
+
+    def OnBaudRate(self, lBaudRate):
+        if lBaudRate < 110:
+            lBaudRate = 110
+        if BaudRate_map.get(str(lBaudRate)):
+            self._com_params[0] = BaudRate_map.get(str(lBaudRate))
+            if self._stream_pub:
+                self._stream_pub.vspax_notify(self._port_key, 'CHANGE', {"name": self._port_key, "params": self._com_params})
+        else:
+            logging.info("This BaudRate {0} is unsupported".format(str(lBaudRate)))
+            if self._stream_pub:
+                self._stream_pub.vspax_notify(self._port_key, 'CHANGE', {"name": self._port_key, "error": "This BaudRate {0} is unsupported".format(str(lBaudRate))})
+        # print("BaudRate change to::", self._com_params)
+
+    def OnLineControl(self, cStopBits, cParity, cWordLength):
+        self._com_params[1] = cStopBits
+        self._com_params[2] = cParity
+        self._com_params[3] = cWordLength
+        if self._stream_pub:
+            self._stream_pub.vspax_notify(self._port_key, 'CHANGE', {"name": self._port_key, "params": self._com_params})
+        # print("params change to::", self._com_params)

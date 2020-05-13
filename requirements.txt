@@ -9,3 +9,5 @@ wmi
 requests
 ping3
 pyserial
+pyinstaller
+idna

@@ -113,14 +113,14 @@ class TcpClientHander(Handler, threading.Thread):
     def on_recv(self, data):
         if self._socket:
             sent_size = self._socket.send(data)
-            # logging.info("TCP Send: {0} - {1}".format(len(data), sent_size))
+            logging.info("TCP Send: {0} - {1}".format(len(data), sent_size))
             self._peer_send_count += sent_size
             if sent_size == len(data):
                 if self._stream_pub:
-                    self._stream_pub.socket_out_pub(data)
+                    self._stream_pub.socket_out_pub(self._port_key, data)
             else:
                 logging.error("Failed to send msg, left data length: {0} ".format(len(data) - sent_size))
                 if self._stream_pub:
-                    self._stream_pub.socket_out_pub(data[0:sent_size])
+                    self._stream_pub.socket_out_pub(self._port_key, data[0:sent_size])
         else:
             logging.warning("Socket is not connected!")

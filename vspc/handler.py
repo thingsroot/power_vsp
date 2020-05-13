@@ -1,8 +1,13 @@
 import logging
 import time
+import struct
+import binascii
 from vspc import *
 from helper import _dict
 
+
+BaudRate_map = {"110": 1, "300": 2, "600": 3, "1200": 4, "2400": 5, "4800": 6, "9600": 7, "19200": 8, "38400": 9,
+    "57600": 10, "115200": 11, "460800": 12, "921600": 13}
 
 class Handler:
     def __init__(self):
@@ -17,6 +22,7 @@ class Handler:
         self._open_app = None
         self._attributes = {}
         self._stream_pub = None
+        self._com_params = [0] * 6
         self._peer_state = 'INITIALIZED'
 
     def start(self):
@@ -81,36 +87,37 @@ class Handler:
         ## logging.info("Port {0} event {1} ul_value: {2}".format(self._port_key, int(event), repr(ul_value)))
         if event == ftvspcPortEventOpen:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
-            logging.debug("Port {0} opened.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
-                          self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
+            logging.info("Port {0} opened.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}".format(self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath))
             self._open_pid = app.contents.dwPid
             self._open_app = str(app.contents.cAppPath, 'GB2312')
             return
 
         if event == ftvspcPortEventOpenBeforeAttach:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
-            logging.debug("Port {0} attached.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
-                          self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
+            logging.debug("Port {0} attached.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}".format(self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath))
             return
 
         if event == ftvspcPortEventQueryOpen:
             app = cast(ul_value, POINTER(FT_VSPC_APP))
-            logging.debug("Port {0} QueryOpen.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}",
-                          self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath)
+            logging.debug("Port {0} QueryOpen.\t dwPid: {1} cAppPath: {2} wcAppPath: {3}".format(self._port_key, app.contents.dwPid, app.contents.cAppPath, app.contents.wcAppPath))
             return 1
 
         if event == ftvspcPortEventClose:
-            logging.debug("Port {0} Closed. {1}}", self._port_key, ul_value)
+            logging.info("Port {0} Closed. {1}".format(self._port_key, ul_value))
             self._open_pid = -1
             self._open_app = ""
 
         if event == ftvspcPortEventRxChar:
-            # logging.debug("Port {0} RxChar. {1}}", self._port_key, ul_value)
+            # logging.debug("Port {0} RxChar. {1}", self._port_key, ul_value)
             sz = FtVspcGetInQueueBytes(self._handle)
             data = FtVspcRead(self._handle, sz)
-
+            fixedbin = b'\xfe'
+            for v in self._com_params:
+                fixedbin = fixedbin + struct.pack('b', v)
+            fixedbin = fixedbin + b'\xef'
             if data:
-                self.on_recv(data)
+                # print("send data to remote::", str(binascii.b2a_hex(fixedbin))[2:-1].upper(), str(binascii.b2a_hex(data))[2:-1].upper())
+                self.on_recv(fixedbin + data)
                 if self._stream_pub:
                     self._recv_count += len(data)
                     self._stream_pub.vspc_in_pub(self._port_key, data)
@@ -124,19 +131,23 @@ class Handler:
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventBaudRate:
-            logging.debug("Application has set baud rate to:", ul_value)
+            logging.debug("Application has set baud rate to: {0}".format(ul_value))
+            self._com_params[0] = BaudRate_map.get(str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventDataBits:
-            logging.debug("Application has set data bits to:", ul_value)
+            self._com_params[3] = ul_value
+            logging.debug("Application has set data bits to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventParity:
-            logging.debug("Application has set parity to:", ul_value)
+            self._com_params[2] = ul_value
+            logging.debug("Application has set parity to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventStopBits:
-            logging.debug("Application has set stopbits to:", ul_value)
+            self._com_params[1] = ul_value
+            logging.debug("Application has set stopbits to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventBreak:
@@ -148,7 +159,7 @@ class Handler:
                 logging.debug("Application has called SetCommBreak")
 
         if event == ftvspcPortEventPurge:
-            logging.debug("Application has set PurgeComm to:", ul_value)
+            logging.debug("Application has set PurgeComm to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
             # TODO: wait for a while clear receives
             '''
@@ -166,35 +177,35 @@ class Handler:
             '''
 
         if event == ftvspcPortEventXonLim:
-            logging.debug("Application has set XonLim to:", ul_value)
+            logging.debug("Application has set XonLim to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventXoffLim:
-            logging.debug("Application has set XoffLim to:", ul_value)
+            logging.debug("Application has set XoffLim to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventXonChar:
-            logging.debug("Application has set XonChar to:", ul_value)
+            logging.debug("Application has set XonChar to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventXoffChar:
-            logging.debug("Application has set XoffChar to:", ul_value)
+            logging.debug("Application has set XoffChar to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventErrorChar:
-            logging.debug("Application has set ErrorChar to:", ul_value)
+            logging.debug("Application has set ErrorChar to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventEofChar:
-            logging.debug("Application has set EofChar to:", ul_value)
+            logging.debug("Application has set EofChar to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventEvtChar:
-            logging.debug("Application has set EvtChar to:", ul_value)
+            logging.debug("Application has set EvtChar to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventBreakChar:
-            logging.debug("Application has set BreakChar to:", ul_value)
+            logging.debug("Application has set BreakChar to: {0}".format(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventTimeouts:
@@ -208,23 +219,23 @@ class Handler:
             }
 
         if event == ftvspcPortEventOutxCtsFlow:
-            logging.debug("Application has set OutxCtsFlow to:", ul_value)
+            logging.debug("Application has set OutxCtsFlow to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventOutxDsrFlow:
-            logging.debug("Application has set OutxDsrFlow to:", ul_value)
+            logging.debug("Application has set OutxDsrFlow to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventDtrControl:
-            logging.debug("Application has set DtrControl to:", ul_value)
+            logging.debug("Application has set DtrControl to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventDsrSensitivity:
-            logging.debug("Application has set DsrSensitivity to:", ul_value)
+            logging.debug("Application has set DsrSensitivity to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventTXContinueOnXoff:
-            logging.debug("Application has set TXContinueOnXoff to:", ul_value)
+            logging.debug("Application has set TXContinueOnXoff to:" + str(ul_value))
 
             self._attributes[PortEventNames[event]] = ul_value == 1
         if event == ftvspcPortEventOutX:
@@ -236,19 +247,19 @@ class Handler:
             logging.debug("Application has set InX to:", ul_value)
 
         if event == ftvspcPortEventNull:
-            logging.debug("Application has set Null to:", ul_value)
+            logging.debug("Application has set Null to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventRtsControl:
-            logging.debug("Application has set RtsControls to:", ul_value)
+            logging.debug("Application has set RtsControls to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventAbortOnError:
-            logging.debug("Application has set AbortOnError to:", ul_value)
+            logging.debug("Application has set AbortOnError to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         if event == ftvspcPortEventUseErrorChar:
-            logging.debug("Application has set UseErrorChar to:", ul_value)
+            logging.debug("Application has set UseErrorChar to:" + str(ul_value))
             self._attributes[PortEventNames[event]] = ul_value == 1
 
         return 0

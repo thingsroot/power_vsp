@@ -120,6 +120,7 @@ log/log.log.7
 log/log.log.8
 log/log.log.9
 test/
+venv32
 venv32/Include/
 venv32/Scripts/Activate.ps1
 venv32/Scripts/activate

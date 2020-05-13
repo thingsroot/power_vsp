@@ -69,7 +69,7 @@ class TcpServerHandler(Handler, threading.Thread):
                 else:
                     data = s.recv(1024)
                     self._peer_recv_count += len(data)
-                    self._stream_pub.socket_in_pub(data)
+                    self._stream_pub.socket_in_pub(self._port_key, data)
                     if data:
                         logging.debug("Data recevied {0}: {1}".format(s.getpeername()[0], data))
                         # message_queues[s].put(data)

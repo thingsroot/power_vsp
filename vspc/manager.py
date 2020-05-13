@@ -241,7 +241,8 @@ class VSPCManager(threading.Thread):
                     logging.exception(ex)
             # print('timespan::::::::::::', time.time() - self._heartbeat_timeout)
             if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
-                    self.clean_all()
+                pass
+                # self.clean_all()
 
         vspc.FtVspcApiClose()
         logging.warning("Close VSPC Library!!!")
