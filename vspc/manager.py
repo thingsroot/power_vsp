@@ -7,6 +7,7 @@ import time
 import json
 import requests
 import os
+from helper import APPCtrl
 
 
 def vspc_event_cb(event, ul_value, context):
@@ -29,7 +30,7 @@ class VSPCManager(threading.Thread):
         self._handlers = []
         self._thread_stop = False
         self._mqtt_stream_pub = stream_pub
-        self._enable_heartbeat = True
+        self._enable_heartbeat = APPCtrl().get_heartbeat()
         self._heartbeat_timeout = time.time() + 90
         self._vspc_event_cb = vspc.EventCB(vspc_event_cb)
         self._vspc_port_event_cb = vspc.PortEventCB(vspc_port_event_cb)

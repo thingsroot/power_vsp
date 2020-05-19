@@ -5,7 +5,7 @@ import binascii
 import pythoncom
 import win32com.client
 from vspax import *
-from helper import _dict
+from helper import _dict, APPCtrl
 from vspax.com_worker import COM_Worker
 
 BaudRate_map = {"110": 1, "300": 2, "600": 3, "1200": 4, "2400": 5, "4800": 6, "9600": 7, "19200": 8, "38400": 9,
@@ -32,6 +32,7 @@ class Handler:
         self._send_count = 0
         self._stream_pub = None
         self._com_params = [0] * 6
+        self._enable_packetheader = APPCtrl().get_packetheader()
         self._com_worker = COM_Worker(self)
 
     def start(self):
@@ -180,16 +181,17 @@ class Handler:
 
     def OnRxChar(self, lCount):
         data = self._vsport.ReadArray(lCount)
-        fixedbin = b'\xfe'
-        for v in self._com_params:
-            fixedbin = fixedbin + struct.pack('b', v)
-        fixedbin = fixedbin + b'\xef'
-        # print(self._com_params)
-        data = data.tobytes()
         if data:
+            data = data.tobytes()
+            if self._enable_packetheader:
+                fixedbin = b'\xfe'
+                for v in self._com_params:
+                    fixedbin = fixedbin + struct.pack('b', v)
+                data = fixedbin + b'\xef' + data
+            # print(self._com_params)
             # logging.info("Serial Got: {0}".format(len(data)))
             # print("send data to remote::", str(binascii.b2a_hex(fixedbin + data))[2:-1].upper())
-            self.on_recv(fixedbin + data)
+            self.on_recv(data)
             # self.on_recv(data)
             if self._stream_pub:
                 self._recv_count += len(data)

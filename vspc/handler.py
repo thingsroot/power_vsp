@@ -3,7 +3,7 @@ import time
 import struct
 import binascii
 from vspc import *
-from helper import _dict
+from helper import _dict, APPCtrl
 
 
 BaudRate_map = {"110": 1, "300": 2, "600": 3, "1200": 4, "2400": 5, "4800": 6, "9600": 7, "19200": 8, "38400": 9,
@@ -23,6 +23,7 @@ class Handler:
         self._attributes = {}
         self._stream_pub = None
         self._com_params = [0] * 6
+        self._enable_packetheader = APPCtrl().get_packetheader()
         self._peer_state = 'INITIALIZED'
 
     def start(self):
@@ -111,13 +112,14 @@ class Handler:
             # logging.debug("Port {0} RxChar. {1}", self._port_key, ul_value)
             sz = FtVspcGetInQueueBytes(self._handle)
             data = FtVspcRead(self._handle, sz)
-            fixedbin = b'\xfe'
-            for v in self._com_params:
-                fixedbin = fixedbin + struct.pack('b', v)
-            fixedbin = fixedbin + b'\xef'
             if data:
                 # print("send data to remote::", str(binascii.b2a_hex(fixedbin))[2:-1].upper(), str(binascii.b2a_hex(data))[2:-1].upper())
-                self.on_recv(fixedbin + data)
+                if self._enable_packetheader:
+                    fixedbin = b'\xfe'
+                    for v in self._com_params:
+                        fixedbin = fixedbin + struct.pack('b', v)
+                    data = fixedbin + b'\xef' + data
+                self.on_recv(data)
                 if self._stream_pub:
                     self._recv_count += len(data)
                     self._stream_pub.vspc_in_pub(self._port_key, data)
@@ -132,7 +134,10 @@ class Handler:
 
         if event == ftvspcPortEventBaudRate:
             logging.debug("Application has set baud rate to: {0}".format(ul_value))
-            self._com_params[0] = BaudRate_map.get(str(ul_value))
+            if BaudRate_map.get(str(ul_value)):
+                self._com_params[0] = BaudRate_map.get(str(ul_value))
+            else:
+                logging.error("This BaudRate {0} is unsupported".format(str(ul_value)))
             self._attributes[PortEventNames[event]] = ul_value
 
         if event == ftvspcPortEventDataBits:

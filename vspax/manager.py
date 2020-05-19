@@ -5,6 +5,7 @@ import json
 import requests
 from serial.tools.list_ports import comports
 from vspax.vs_port import VSPort
+from helper import APPCtrl
 
 
 class VSPAXManager(threading.Thread):
@@ -13,7 +14,7 @@ class VSPAXManager(threading.Thread):
         self._ports = []
         self._thread_stop = False
         self._mqtt_stream_pub = stream_pub
-        self._enable_heartbeat = True
+        self._enable_heartbeat = APPCtrl().get_heartbeat()
         self._heartbeat_timeout = time.time() + 90
         self._vsport_ctrl = None
 
@@ -115,7 +116,7 @@ class VSPAXManager(threading.Thread):
             # print('timespan::::::::::::', time.time() - self._heartbeat_timeout)
             if self._enable_heartbeat and time.time() > self._heartbeat_timeout:
                 pass
-                #self.clean_all()
+                self.clean_all()
 
         self._vsport_ctrl.close()
         logging.warning("VSPAX Manager Closed!!!")
