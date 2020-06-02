@@ -288,7 +288,7 @@ class VNETManager(threading.Thread):
         if keyHandle:
             count = winreg.QueryInfoKey(keyHandle)[1]  # 获取该目录下所有键的个数(0-下属键个数;1-当前键值个数)
             if not count:
-                logging.error.info("创建 tinc path:: {0}".format(tincbinpath))
+                logging.info("创建 tinc path:: {0}".format(tincbinpath))
                 winreg.SetValue(rRoot, subDir, winreg.REG_SZ, tincbinpath)
                 for cmd in tincinscmd:
                     os.popen(cmd)
@@ -296,7 +296,7 @@ class VNETManager(threading.Thread):
             else:
                 name, key_value, value_type = winreg.EnumValue(keyHandle, 0)
                 if tincbinpath not in key_value:
-                    logging.error.info("修改 tinc path:: {0}".format(tincbinpath))
+                    logging.info("修改 tinc path:: {0}".format(tincbinpath))
                     winreg.SetValue(rRoot, subDir, winreg.REG_SZ, tincbinpath)
                     for cmd in tincinscmd:
                         os.popen(cmd)
@@ -330,11 +330,13 @@ class VNETManager(threading.Thread):
 
     def service_start(self, vnettype, proxytype="frpc"):
         proxyService = "frpc_Vnet_service"
+        tincService = "tinc.tofreeioebridge"
         if proxytype == "npc":
             proxyService = "Npc"
-        dest_services = [proxyService, "tinc.tofreeioebridge"]
         if vnettype == 'router':
-            dest_services = [proxyService, "tinc.tofreeioerouter"]
+            tincService = "tinc.tofreeioerouter"
+        dest_services = [proxyService, tincService]
+        # logging.info(str(dest_services))
         services_start = 0
         self.check_binpath()
         for s in dest_services:

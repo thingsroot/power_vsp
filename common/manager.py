@@ -89,7 +89,7 @@ class UPDATEManager(threading.Thread):
             logging.exception(ex)
         if response:
             ret = json.loads(response.content.decode("gb2312"))
-            logging.info("coud_servers_list::" + str(len(ret)))
+            logging.info("coud_servers_list " + str(len(ret)))
             # print(ret)
             for k, v in ret.items():
                 ret = ping(v, unit='ms', timeout=1)
@@ -100,7 +100,7 @@ class UPDATEManager(threading.Thread):
                 pass
             result = sorted(result, key=lambda x: x['key'])
         else:
-            logging.info("cloud_servers_list:: 0")
+            logging.info("cloud_servers_list  0")
         if result:
             return result
         else:
