@@ -82,18 +82,32 @@ class VNET_Service(BaseService):
         if params:
             # print(params.get('vnet_cfg'))
             # print(params.get('frps_cfg'))
-            self._manager.wirte_common_frpcini(file, params.get('vnet_cfg'), params.get('frps_cfg'))
             vnettype = params.vnet_cfg['net_mode']
-            proxy_cfg = {
-                params.vnet_cfg['gate_sn'] + '_tofreeioe' + vnettype: frpc_proxy[vnettype]
-                # params.vnet_cfg['gate_sn'] + '_' + vnettype + '_' + str(int(time.time())): frpc_proxy[vnettype]
-            #     Adjustment frpc proxy name
-            }
-            self._manager.add_proxycfg_frpcini(file, proxy_cfg)
-
+            proxytype = "frpc"
+            if params.get("proxytype"):
+                proxytype = params.get("proxytype")
+            if proxytype == "frpc":
+                self._manager.wirte_common_frpcini(file, params.get('vnet_cfg'), params.get('frps_cfg'))
+                proxy_cfg = {
+                    params.vnet_cfg['gate_sn'] + '_tofreeioe' + vnettype: frpc_proxy[vnettype]
+                    # params.vnet_cfg['gate_sn'] + '_' + vnettype + '_' + str(int(time.time())): frpc_proxy[vnettype]
+                #     Adjustment frpc proxy name
+                }
+                self._manager.add_proxycfg_frpcini(file, proxy_cfg)
+            else:
+                if params.get('nps_cfg'):
+                    nps_server = params.get('nps_cfg').get("server_addr")
+                    nps_port = params.get('nps_cfg').get("server_port")
+                    nps_vkey = params.get('nps_cfg').get("vkey")
+                    npc_inscmd = curpath + '\\vnet\\tinc\\_npc\\npc.exe' + " install -server=" + nps_server + ":" + nps_port + "-vkey=" + nps_vkey
+                    os.popen("sc dtop Npc")
+                    sleep(0.01)
+                    os.popen(npc_inscmd)
+                    sleep(0.01)
+                    os.popen("sc config Npc start= demand")
             prepend_tap_ret = self._manager.wmi_in_thread(self._manager.prepend_tap)
             if prepend_tap_ret:
-                ret = self._manager.service_start(vnettype)
+                ret = self._manager.service_start(vnettype, proxytype)
         if ret:
             return self.success("api", id, ret)
         else:
@@ -102,7 +116,10 @@ class VNET_Service(BaseService):
     @whitelist.__func__
     def api_service_stop(self, id, params):
         vnettype = params.vnet_cfg['net_mode']
-        ret = self._manager.service_stop(vnettype)
+        proxytype = "frpc"
+        if params.get("proxytype"):
+            proxytype = params.get("proxytype")
+        ret = self._manager.service_stop(vnettype, proxytype)
         if ret:
             return self.success("api", id, ret)
         else:

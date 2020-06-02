@@ -7,6 +7,7 @@ import json
 import os
 import wmi
 import pythoncom
+import winreg
 import platform
 import configparser
 import requests
@@ -266,6 +267,41 @@ class VNETManager(threading.Thread):
         else:
             return True
 
+    def check_binpath(self):
+        rRoot = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
+        subDir = r'Software\tinc'
+        tincbinpath = os.getcwd() + r"\vnet\tinc"
+        tincinscmd = ['sc stop tinc.tofreeioebridge', 'sc delete tinc.tofreeioebridge',
+                      'sc stop tinc.tofreeioerouter', 'sc delete tinc.tofreeioerouter',
+                      tincbinpath + r'\tincd.exe -n ' + 'tofreeioebridge', 'sc stop tinc.tofreeioebridge',
+                      tincbinpath + r'\tincd.exe -n ' + 'tofreeioerouter', 'sc stop tinc.tofreeioerouter',
+                      'sc config tinc.tofreeioebridge start= demand',
+                      'sc config tinc.tofreeioerouter start= demand']
+        keyHandle = None
+        try:
+            keyHandle = winreg.OpenKey(rRoot, subDir)
+        except Exception as ex:
+            logging.error(subDir + " 不存在")
+            logging.error(ex)
+        if not keyHandle:
+            keyHandle = winreg.CreateKey(rRoot, subDir)
+        if keyHandle:
+            count = winreg.QueryInfoKey(keyHandle)[1]  # 获取该目录下所有键的个数(0-下属键个数;1-当前键值个数)
+            if not count:
+                logging.error.info("创建 tinc path:: {0}".format(tincbinpath))
+                winreg.SetValue(rRoot, subDir, winreg.REG_SZ, tincbinpath)
+                for cmd in tincinscmd:
+                    os.popen(cmd)
+                    time.sleep(0.01)
+            else:
+                name, key_value, value_type = winreg.EnumValue(keyHandle, 0)
+                if tincbinpath not in key_value:
+                    logging.error.info("修改 tinc path:: {0}".format(tincbinpath))
+                    winreg.SetValue(rRoot, subDir, winreg.REG_SZ, tincbinpath)
+                    for cmd in tincinscmd:
+                        os.popen(cmd)
+                        time.sleep(0.01)
+
     def service_status(self):
         services_status = {}
         is_running = None
@@ -292,11 +328,15 @@ class VNETManager(threading.Thread):
                     os.popen(cmd1)
         return services_status
 
-    def service_start(self, vnettype):
-        dest_services = ["frpc_Vnet_service", "tinc.tofreeioebridge"]
+    def service_start(self, vnettype, proxytype="frpc"):
+        proxyService = "frpc_Vnet_service"
+        if proxytype == "npc":
+            proxyService = "Npc"
+        dest_services = [proxyService, "tinc.tofreeioebridge"]
         if vnettype == 'router':
-            dest_services = ["frpc_Vnet_service", "tinc.tofreeioerouter"]
+            dest_services = [proxyService, "tinc.tofreeioerouter"]
         services_start = 0
+        self.check_binpath()
         for s in dest_services:
             cmd1 = 'sc start ' + s + '|find /I "STATE"'
             cmd_ret = os.popen(cmd1).read().strip()
@@ -316,10 +356,13 @@ class VNETManager(threading.Thread):
         action_result['services_start'] = self._result["services_start"]
         return action_result
 
-    def service_stop(self, vnettype):
-        dest_services = ["frpc_Vnet_service", "tinc.tofreeioebridge"]
+    def service_stop(self, vnettype, proxytype="frpc"):
+        proxyService = "frpc_Vnet_service"
+        if proxytype == "npc":
+            proxyService = "Npc"
+        dest_services = [proxyService, "tinc.tofreeioebridge"]
         if vnettype == 'router':
-            dest_services = ["frpc_Vnet_service", "tinc.tofreeioerouter"]
+            dest_services = [proxyService, "tinc.tofreeioerouter"]
         services_start = 0
         for s in dest_services:
             cmd1 = 'sc stop ' + s + '|find /I "STATE"'

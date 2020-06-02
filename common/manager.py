@@ -70,7 +70,7 @@ class UPDATEManager(threading.Thread):
             return {"status": "upgrading"}
         else:
             filemd5 = GetFileMd5('./_update/freeioe_Rprogramming_lastest.zip')
-            if filemd5 and self._new_version_md5 == filemd5:
+            if filemd5 and self._new_version_md5.upper() == filemd5.upper():
                 cmd1 = 'sc start freeioe_Rprogramming_update_service |find /I "STATE"'
                 cmd_ret = os.popen(cmd1).read().strip()
                 return {"status": "done", "md5": filemd5}
